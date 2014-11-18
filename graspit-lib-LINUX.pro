@@ -11,9 +11,9 @@ LIBS += $$ADDITIONAL_LINK_FLAGS
 	INCLUDEPATH += $(BULLET_PHYSICS_SOURCE_DIR)/src/BulletCollision/CollisionShapes
 	INCLUDEPATH += $(BULLET_PHYSICS_SOURCE_DIR)/src/BulletCollision/Gimpact
 
-LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/build/src/BulletDynamics
-LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/build/src/BulletCollision
-LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/build/src/LinearMath
+LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/src/BulletDynamics
+LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/src/BulletCollision
+LIBS += -L$(BULLET_PHYSICS_SOURCE_DIR)/src/LinearMath
 LIBS += -lBulletDynamics -lBulletCollision -lLinearMath
 
 # ---------------------- Blas and Lapack ----------------------------------
