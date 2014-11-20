@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+<world>
+	<obstacle>
+		<filename>models/obstacles/bin.wrl</filename>
+		<transform>
+			<fullTransform>(+1 +0 +0 +0)[+0 +0 +0]</fullTransform>
+		</transform>
+	</obstacle>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.931884 +0.151981 -0.106733 -0.311612)[+25.2526 +302.353 +68.6395]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.937116 -0.130556 -0.234386 -0.22323)[-53.7798 +202.399 +56.9736]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(-0.0402689 +0.999189 +7.2733e-07 -1.36144e-07)[-56.8144 +50.2919 +54.9778]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.875874 -0.426498 -0.120278 -0.190992)[+84.1192 +193.48 +58.9714]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.975119 +0.00168467 +0.221584 +0.00640632)[+66.9965 +62.4037 +56.0266]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(-0.279076 +0.534885 +0.668919 -0.434237)[-74.6168 +309.727 +111.879]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.638058 +0.280413 +0.231222 -0.678813)[-83.6034 +116.332 +152.928]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.485677 +0.062463 +0.718778 +0.493533)[+85.2368 +322.887 +172.361]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.343821 -0.642096 +0.684818 +0.0228712)[+23.8364 +108.412 +142.716]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.186062 -0.168567 +0.964814 +0.0781007)[+8.04949 +239.291 +177.796]</fullTransform>
+		</transform>
+	</graspableBody>
+	<camera>
+		<position>-519.623 -275.543 +442.263</position>
+		<orientation>+0.474035 -0.242604 -0.351756 +0.769871</orientation>
+		<focalDistance>+596.305</focalDistance>
+	</camera>
+</world>

@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<world>
+	<obstacle>
+		<filename>models/obstacles/corner_table.xml</filename>
+		<transform>
+			<fullTransform>(+1 +0 +0 +0)[+0 +0 +0]</fullTransform>
+		</transform>
+	</obstacle>
+	<graspableBody>
+		<filename>models/objects/cube.xml</filename>
+		<transform>
+			<fullTransform>(+0.948486 +0.23838 +0.101081 +0.182572)[+237.907 +253.265 +559.661]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/flask.xml</filename>
+		<transform>
+			<fullTransform>(+0.0512599 +0.712379 -0.673153 +0.191712)[+219.013 +306.558 +771.924]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.985476 +0.169814 +2.02435e-08 -2.02434e-08)[+451.081 +239.853 +604.28]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/cube.xml</filename>
+		<transform>
+			<fullTransform>(+0.943661 +0.144091 +0.164221 +0.248542)[+326.399 +226.067 +643.252]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/flask.xml</filename>
+		<transform>
+			<fullTransform>(+0.881513 -0.47084 +0.0347661 +0.00591327)[+439.816 +387.652 +731.448]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.906209 -0.251409 -0.0570204 -0.335152)[+110.959 +300.852 +896.092]</fullTransform>
+		</transform>
+	</graspableBody>
+	<camera>
+		<position>+250.608 -846.741 +1016.35</position>
+		<orientation>+0.569974 +0.0191722 -0.0429026 +0.820318</orientation>
+		<focalDistance>+1324.88</focalDistance>
+	</camera>
+</world>

@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<world>
+	<obstacle>
+		<filename>models/obstacles/corner_table.xml</filename>
+		<transform>
+			<fullTransform>(+1 +0 +0 +0)[+0 +0 +0]</fullTransform>
+		</transform>
+	</obstacle>
+	<graspableBody>
+		<filename>models/objects/mug.xml</filename>
+		<transform>
+			<fullTransform>(+0.985476 +0.169814 +2.02435e-08 -2.02434e-08)[+451.081 +239.853 +604.28]</fullTransform>
+		</transform>
+	</graspableBody>
+	<graspableBody>
+		<filename>models/objects/flask.xml</filename>
+		<transform>
+			<fullTransform>(+0.881513 -0.47084 +0.0347661 +0.00591327)[+439.816 +387.652 +731.448]</fullTransform>
+		</transform>
+	</graspableBody>
+	<camera>
+		<position>+1422.55 +261.379 +1199.68</position>
+		<orientation>+0.388965 +0.32366 +0.595175 +0.624273</orientation>
+		<focalDistance>+1324.88</focalDistance>
+	</camera>
+</world>
