@@ -19,13 +19,13 @@ Separator{
 	Rotation {
 		rotation 1 0 0 1.57
 	}
-	Cylinder{radius 25 height 36}
+	Cylinder{radius 25 height 30}
 	Translation{
-		translation 0 18 0
+		translation 0 15 0
 	}
 	Sphere {radius 25}
 	Translation{
-		translation 0 -36 0
+		translation 0 -30 0
 	}
 	Sphere {radius 25}
 }	
@@ -36,19 +36,19 @@ Separator{
 	Material { 
 		diffuseColor 0.8 0.8 0.8
 	}
-	Cube {width 240 height 50 depth 36}
+	Cube {width 240 height 50 depth 30}
 	Rotation {
 		rotation 0 0 1 -1.57
 	}
 	Separator {
 		Translation {
-			translation 0 0 18
+			translation 0 0 15
 		}
 		Cylinder {radius 25 height 240}
 	}
 	Separator {
 		Translation {
-			translation 0 0 -18
+			translation 0 0 -15
 		}
 		Cylinder {radius 25 height 240}
 	}

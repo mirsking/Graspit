@@ -34,12 +34,15 @@
 #include <set>
 #include <QString>
 #include <QObject>
+#include <btAlignedObjectArray.h>
 
 #include "material.h"
 
 #include <Inventor/SoType.h>
 
 class btDiscreteDynamicsWorld;
+//class btAlignedObjectArray;
+class btRigidBody;
 
 class vec3;
 class position;
@@ -194,6 +197,8 @@ protected:
   
   btDiscreteDynamicsWorld* mBtDynamicsWorld;
 
+  btAlignedObjectArray<btRigidBody*> mBtLinks;
+ 
 
   friend class Body;
   friend class DynamicBody;

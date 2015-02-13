@@ -3,4 +3,11 @@
     <material>plastic</material>
     <mass>10000</mass>
     <geometryFile>joint2.iv</geometryFile>
+    <geometryOffset>
+      <transform>
+        <translation>-60.0 0.0 0.0</translation>	
+        <rotation>90 y</rotation>
+        <rotation>90 z</rotation>
+      </transform>
+    </geometryOffset>
 </root>

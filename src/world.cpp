@@ -44,6 +44,8 @@
 #include "btTriangleMesh.h"
 #include "btGImpactShape.h"
 #include "btGImpactCollisionAlgorithm.h"
+#include "btHingeConstraint.h"
+
 
 #include "triangle.h"
 
@@ -954,7 +956,7 @@ World::addBody(Body *newBody)
 
 	newBody->getGeometryTriangles(&triangles);
 	int numTriangles = triangles.size();
-	printf("NUM TRIANGLES:, %d",numTriangles);
+	printf("NUM TRIANGLES: %d\n",numTriangles);
 	Triangle tritemp = triangles.at(0);
 
 	for(int i = 0; i < numTriangles-1; i=i+1)
@@ -973,7 +975,7 @@ World::addBody(Body *newBody)
 		btVector3 v0(v01,v02,v03);
 		btVector3 v1(v11,v12,v13);
 		btVector3 v2(v21,v22,v23);		
-		printf("%f,%f,%f\n",v01,v02,v03);
+		//printf("%f,%f,%f\n",v01,v02,v03);
 		triMesh->btTriangleMesh::addTriangle(v0,v1,v2,true);
 		
 	}
@@ -1009,6 +1011,7 @@ World::addBody(Body *newBody)
 		//add the body to the dynamics world
 		mBtDynamicsWorld->addRigidBody(body);
 
+		
 
 
 
@@ -1035,6 +1038,95 @@ World::addLink(Link *newLink)
 {
 	bodyVec.push_back(newLink);
 	numBodies++;
+
+	//addBody(newLink);
+
+	// Adding Bullet Bodies
+	// Creation of CollisionShape
+	btTriangleMesh* triMesh = new btTriangleMesh(true,true);
+	
+	
+	// Get the geometry data form the Graspit object
+	std::vector<Triangle> triangles;
+
+	newLink->getGeometryTriangles(&triangles);
+	int numTriangles = triangles.size();
+	printf("NUM TRIANGLES:, %d\n",numTriangles);
+	Triangle tritemp = triangles.at(0);
+
+	for(int i = 0; i < numTriangles-1; i=i+1)
+	{
+		tritemp = triangles.at(i);
+		btScalar v01(tritemp.v1[0]);
+		btScalar v02(tritemp.v1[1]);
+		btScalar v03(tritemp.v1[2]);
+		btScalar v11(tritemp.v2[0]);
+		btScalar v12(tritemp.v2[1]);
+		btScalar v13(tritemp.v2[2]);
+		btScalar v21(tritemp.v3[0]);
+		btScalar v22(tritemp.v3[1]);
+		btScalar v23(tritemp.v3[2]);
+
+		btVector3 v0(v01,v02,v03);
+		btVector3 v1(v11,v12,v13);
+		btVector3 v2(v21,v22,v23);		
+		//printf("%f,%f,%f\n",v01,v02,v03);
+		triMesh->btTriangleMesh::addTriangle(v0,v1,v2,true);
+		
+	}
+	
+	btCollisionShape* mTriMeshShape = new btBvhTriangleMeshShape(triMesh, true,true);
+	
+	btScalar mass(0.);
+	btVector3 localInertia(0,0,0);
+	
+	if (newLink->isDynamic())
+	{	
+		mass = ((DynamicBody*)newLink)->getMass();
+		//if (mass == 10000)
+		{mTriMeshShape = new btGImpactMeshShape(triMesh);
+		((btGImpactMeshShape*)mTriMeshShape)->updateBound();
+		
+		//mTriMeshShape = new btBoxShape(btVector3(btScalar(25.),btScalar(25.),btScalar(25.)));		
+		mTriMeshShape->calculateLocalInertia(mass,localInertia); printf("This is the second Link \n");}
+		//else {mass=0; printf("This is BASE \n");}	
+	}
+	else
+	{
+		//mTriMeshShape = new btBoxShape(btVector3(btScalar(625.),btScalar(625.),btScalar(425.)));
+		printf("THIS IS A STATIC BODY \n");
+	}
+
+
+	transf temptrans = newLink->getTran();
+			
+			
+			btScalar wrot(temptrans.rotation().w);
+			btScalar xrot(temptrans.rotation().x);
+			btScalar yrot(temptrans.rotation().y);
+			btScalar zrot(temptrans.rotation().z);
+			
+			btScalar xtrans(temptrans.translation().x());
+			btScalar ytrans(temptrans.translation().y());
+			btScalar ztrans(temptrans.translation().z());
+
+				
+
+
+	//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(btTransform(btQuaternion( xrot , yrot , zrot , wrot), btVector3(xtrans, ytrans, ztrans)));
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,mTriMeshShape,localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		
+		body->setCenterOfMassTransform(btTransform(btQuaternion( xrot , yrot , zrot , wrot), btVector3(xtrans, ytrans, ztrans)));
+		//add the body to the dynamics world
+		mBtDynamicsWorld->addRigidBody(body);
+
+	mBtLinks.push_back(body);
+
+
+
+
 }
 
 /*! Loads a robot from a file and adds it to the world. \a filename must
@@ -1104,11 +1196,53 @@ World::addRobot(Robot *robot, bool addToScene)
 
 	if (robot->getBase()) {
 		addLink(robot->getBase());
+		btScalar mass(0.);
+		btVector3 localInertia(0,0,0);
+		mBtLinks[0]->setMassProps(mass , localInertia);
+
 	}
 
 	for (int f=0; f<robot->getNumChains(); f++) {
-		for (int l=0; l<robot->getChain(f)->getNumLinks(); l++) {
+		int numberLinks = robot->getChain(f)->getNumLinks();
+
+		//if (robot->getChain(f)->getNumLinks() > 2 ){numberLinks = 3;}
+		//else {numberLinks = robot->getChain(f)->getNumLinks();}
+		printf("Number of Links %d\n ", numberLinks);
+		for (int l=0; l<numberLinks; l++) {
 			addLink(robot->getChain(f)->getLink(l));
+			bool constructor3 = false;
+			
+			
+			{
+			//if(l >= 1){
+				//transf link_np1 = robot->getChain(f)->getLink(l)->getTran().inverse();
+				//transf link_n = robot->getChain(f)->getLink(l-1)->getTran().inverse();
+				
+				vec3 proxjointaxis = robot->getChain(f)->getLink(l)->getProximalJointAxis();
+				//vec3 pro
+				btVector3 xaxis(proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() );
+				printf("The AXIS:%f,%f,%f \n",proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() );
+
+				//transf const &getTran()
+				
+				//position 
+				transf proxpospresenttran = robot->getChain(f)->getTran();  //->getLink(l)->getProximalJointLocation();
+				vec3 proxjointpos = proxpospresenttran.translation(); 
+				printf("THIS IS THE LOCATION %f,%f,%f \n",-proxjointpos.x(),proxjointpos.y(),proxjointpos.z());
+				btVector3 xpos(proxjointpos.x(), proxjointpos.y(), proxjointpos.z());
+				
+				//btRigidBody link_present = *(mBtLinks[2]);
+				//btRigidBody link_before = *(mBtLinks[1]);
+
+				btTypedConstraint* newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[1]) , btVector3(230 , 0 , 0), btVector3(0,0,0)  , btVector3(0 , 0 , 1), xaxis );//xaxis );btVector3(0 , -1 , 0)
+				//(btHingeConstraint)*newjoint->setLimit( btScalar(0) , btScalar(180) );
+				mBtDynamicsWorld->addConstraint(newjoint , false);
+			//}
+			}
+
+
+
+
 		}
 	}
 	for (int f=0; f<robot->getNumChains(); f++) {
@@ -1844,6 +1978,13 @@ World::turnOnDynamics()
 				body->setLinearVelocity(btVector3(0 , 0 , 0));
 				body->setAngularVelocity(btVector3(0 , 0 , 0));
 					}
+
+			if (j == 0){
+			//btCollisionObject* obj = mBtDynamicsWorld->getCollisionObjectArray()[j+1];
+			//btRigidBody* body2 = btRigidBody::upcast(obj);
+			//btHingeConstraint* hinge = new btHingeConstraint(*body,*body2, btVector3(-40,10,0),btVector3(-40,1,0),btVector3(0 , 0 , 1),btVector3(0 , 0 , 1), true);
+			//mBtDynamicsWorld->addConstraint(hinge);
+			}
 		}
 	
 
