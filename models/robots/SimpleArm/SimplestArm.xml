@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<robot type="Hand">
+    <palm>joint1.xml</palm>
+    <dof type="r">
+        <defaultVelocity>1.0</defaultVelocity>
+        <maxEffort>1.0e+11</maxEffort>
+        <Kp>1.0e+12</Kp>
+        <Kd>1.0e+10</Kd>
+        <draggerScale>100.0</draggerScale>
+    </dof>
+    <chain>
+        <transform>
+            <translation>230 0 0</translation>
+        </transform>
+        <joint type="Revolute">
+            <theta>d0</theta>
+            <d>0</d>
+            <a>60</a>
+            <alpha>0</alpha>
+            <minValue>0</minValue>
+            <maxValue>30</maxValue>
+        </joint>
+        <link dynamicJointType="Revolute">joint2.xml</link>
+    </chain>
+</robot>
