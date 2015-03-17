@@ -183,9 +183,10 @@ World::World(QObject *parent, const char *name, IVmgr *mgr) : QObject(parent,nam
 
 	//btCollisionDispatcher * dispatchertest = static_cast<btCollisionDispatcher *>(mBtdynamicsWorld ->getDispatcher());
 	//btGImpactCollisionAlgorithm::registerAlgorithm(dispatchertest);
-
-	mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
-
+//DLR
+mBtDynamicsWorld->setGravity(btVector3(1,0,1));
+//BARRETT
+//mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
 	///-----initialization_end-----
 
 	
@@ -1201,50 +1202,198 @@ World::addRobot(Robot *robot, bool addToScene)
 		mBtLinks[0]->setMassProps(mass , localInertia);
 
 	}
-
+        printf("### of m_links: %d \n ",mBtLinks.size());
 	for (int f=0; f<robot->getNumChains(); f++) {
+                //get number of links
 		int numberLinks = robot->getChain(f)->getNumLinks();
+		printf("chain#: %d ,Number of Links %d\n ", f,numberLinks);
+                //get number of joints
+                int numberjoints = robot->getChain(f)->getNumJoints();
+		printf("chain#: %d ,Number of joints %d\n ", f,numberjoints);
+               //get the transfrom from the origin of the palm to the base of this chain
+	       transf chaintransf = robot->getChain(f)->getTran();  
+		vec3 chaintranslation = chaintransf.translation(); 
+		printf("chain %d TRANSLATION %f,%f,%f \n",f,chaintranslation.x(),chaintranslation.y(),chaintranslation.z());
+		btVector3 chainpos(chaintranslation.x(), chaintranslation.y(),chaintranslation.z());
+               // chain rotation, to get the Z1 in frame of Z0
+                Quaternion rotq=chaintransf.rotation();
+                vec3 zbase=vec3(0,0,1);
+                vec3 zbaseinOrigin=rotq*zbase;
+                vec3 xbaseinOrigin=rotq*vec3(1,0,0);
+                vec3 ybaseinOrigin=rotq*vec3(0,1,0);
+                btVector3 baseaxis(zbaseinOrigin.x(),zbaseinOrigin.y(),zbaseinOrigin.z());
+                btVector3 xbaseaxis(xbaseinOrigin.x(),xbaseinOrigin.y(),xbaseinOrigin.z());
+                btVector3 ybaseaxis(ybaseinOrigin.x(),ybaseinOrigin.y(),ybaseinOrigin.z());
+             // printf("chain %d base z in origin frame %f,%f,%f \n",f,zbaseinOrigin.x(),zbaseinOrigin.y(),zbaseinOrigin.z()); //correct one
+                //get list of joints;
+                //std::list<Joint*> jointlist=robot->getChain(f)->getJoints();
+                //hard code for DLR: could use joint index j++, to get current joint correspond to the link
+                Joint* joint1=robot->getChain(f)->getJoint(0);
+                Joint* joint2=robot->getChain(f)->getJoint(1);
+                transf T1=joint1->getTran();
+                transf T2=joint2->getTran();
+                 Quaternion rotqj01=T1.rotation();
+                 Quaternion rotqj12=T2.rotation();
+                 Quaternion rot02=rotqj01*rotqj12;
+                 Quaternion rot20=rot02.inverse();
+                 Quaternion rot21=rotqj12.inverse();
+                 
+                 vec3 zjoint0=vec3(0,0,1);
+                 vec3 zjoint0new=rot20*zjoint0;
+                 vec3 xjoint0new=rot20*vec3(1,0,0);
+                 vec3 yjoint0new=rot20*vec3(0,1,0);
+                btVector3 btzjoint0new(zjoint0new.x(),zjoint0new.y(),zjoint0new.z());
+                btVector3 btxjoint0new(xjoint0new.x(),xjoint0new.y(),xjoint0new.z());
+                btVector3 btyjoint0new(yjoint0new.x(),yjoint0new.y(),yjoint0new.z());
+               printf("chain %d joint0 z in frame 2 %f,%f,%f \n",f,zjoint0new.x(),zjoint0new.y(),zjoint0new.z()); 
+               
+                 vec3 zjoint1=vec3(0,0,1);
+                 vec3 zjoint1new=rot21*zjoint1;
+                 vec3 xjoint1new=rot21*vec3(1,0,0);
+                 vec3 yjoint1new=rot21*vec3(0,1,0);
+                 btVector3 btzjoint1new(zjoint1new.x(),zjoint1new.y(),zjoint1new.z());
+                 btVector3 btxjoint1new(xjoint1new.x(),xjoint1new.y(),xjoint1new.z());
+                 btVector3 btyjoint1new(yjoint1new.x(),yjoint1new.y(),yjoint1new.z());
+               printf("chain %d joint1 z in frame2 %f,%f,%f \n",f,zjoint1new.x(),zjoint1new.y(),zjoint1new.z()); 
+                  vec3 zjoint1infram0=rotqj01*vec3(0,0,1);
+                 
+            
+                //world frame in the first link object frame
+                  Quaternion roto2=rotq*rotqj01*rotqj12;
+                   Quaternion rot2o=roto2.inverse();
+                 vec3 zjointonew=rot2o*vec3(0,0,1);
+                 vec3 xjointonew=rot2o*vec3(1,0,0);
+                 vec3 yjointonew=rot2o*vec3(0,1,0);
+                btVector3 btzjointbnew(zjointonew.x(),zjointonew.y(),zjointonew.z());
+                btVector3 btxjointbnew(xjointonew.x(),xjointonew.y(),xjointonew.z());
+                btVector3 btyjointbnew(yjointonew.x(),yjointonew.y(),yjointonew.z()); 
 
-		//if (robot->getChain(f)->getNumLinks() > 2 ){numberLinks = 3;}
-		//else {numberLinks = robot->getChain(f)->getNumLinks();}
-		printf("Number of Links %d\n ", numberLinks);
 		for (int l=0; l<numberLinks; l++) {
 			addLink(robot->getChain(f)->getLink(l));
+                         //get the property "dynamicjointtype"!!!!!!!!!!
+                 
 			bool constructor3 = false;
-			
-			
-			{
-			//if(l >= 1){
-				//transf link_np1 = robot->getChain(f)->getLink(l)->getTran().inverse();
-				//transf link_n = robot->getChain(f)->getLink(l-1)->getTran().inverse();
-				
-				vec3 proxjointaxis = robot->getChain(f)->getLink(l)->getProximalJointAxis();
-				//vec3 pro
-				btVector3 xaxis(proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() );
-				printf("The AXIS:%f,%f,%f \n",proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() );
+			printf("link#: %d \n ",l);
+			{   //get the axis in the frame of next joint
+			     vec3 proxjointaxis = robot->getChain(f)->getLink(l)->getProximalJointAxis();
+			     btVector3 linkpaxis(proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() ); 
+                             printf("The link PROXIMAL JOINT AXIS:%f,%f,%f \n",proxjointaxis.x() , proxjointaxis.y() , proxjointaxis.z() );
+                           //get the proximal joint location in the frame of next joint
+	                     position prolocation=robot->getChain(f)->getLink(l)->getProximalJointLocation();
+                             printf("proximalJoint localtion: %f, %f, %f \n",prolocation.x(),prolocation.y(),prolocation.z());
+                             btVector3 pivot2(prolocation.x(),prolocation.y(),prolocation.z());
+                     
+                      int linksize=mBtLinks.size(); 
+                      int curind=linksize-1;      
+                      printf("### of m_links: %d \n ",linksize);
 
-				//transf const &getTran()
-				
-				//position 
-				transf proxpospresenttran = robot->getChain(f)->getTran();  //->getLink(l)->getProximalJointLocation();
-				vec3 proxjointpos = proxpospresenttran.translation(); 
-				printf("THIS IS THE LOCATION %f,%f,%f \n",-proxjointpos.x(),proxjointpos.y(),proxjointpos.z());
-				btVector3 xpos(proxjointpos.x(), proxjointpos.y(), proxjointpos.z());
-				
-				//btRigidBody link_present = *(mBtLinks[2]);
-				//btRigidBody link_before = *(mBtLinks[1]);
+                   if(l==0){//l==0, the prev link is palm
+                            if(numberLinks<numberjoints){ // case liek DLR may have universal or ball type link, for DLR
+                              printf("!!!!!more joints than links\n");
+                              //should use universal constrain, try hinge constrain first
+                             /* btTypedConstraint* newjoint ;
+                               printf("chain %d base z in origin frame %f,%f,%f \n",f,zbaseinOrigin.x(),zbaseinOrigin.y(),zbaseinOrigin.z());
+                               printf("chain %d joint0 z in new frame %f,%f,%f \n",f,zjoint0new.x(),zjoint0new.y(),zjoint0new.z()); 
+                                printf("chain %d joint1 z in new frame %f,%f,%f \n",f,zjoint1new.x(),zjoint1new.y(),zjoint1new.z()); 
+                              //add two hinge constraint
+                              newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[curind]) , chainpos, pivot2,  baseaxis, btzjoint0new);
+                              mBtDynamicsWorld->addConstraint(newjoint , true);
+                              newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[curind]) , chainpos, pivot2,  baseaxis, btzjoint1new);
+                              mBtDynamicsWorld->addConstraint(newjoint , true); */
+                         
+                         //add one constraint     
+                       /*  btTypedConstraint* newjoint ;
+                         newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[curind]) , chainpos, pivot2,  baseaxis, btzjoint0new);
+                         mBtDynamicsWorld->addConstraint(newjoint , true); */
 
-				btTypedConstraint* newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[1]) , btVector3(230 , 0 , 0), btVector3(0,0,0)  , btVector3(0 , 0 , 1), xaxis );//xaxis );btVector3(0 , -1 , 0)
-				//(btHingeConstraint)*newjoint->setLimit( btScalar(0) , btScalar(180) );
-				mBtDynamicsWorld->addConstraint(newjoint , false);
-			//}
+
+                      //universal constraint
+                         btTransform frameInA;
+                         btTransform frameInB;
+                         frameInA.setIdentity();
+                         frameInB.setIdentity(); 
+                        frameInA.getBasis().setValue( xbaseaxis.x(),ybaseaxis.x(), baseaxis.x(),
+                                                      xbaseaxis.y(), ybaseaxis.y(), baseaxis.y(),
+                                                     xbaseaxis.z(), ybaseaxis.z(), baseaxis.z() );  
+                         printf("xbaseaxis: %f, %f, %f \n",xbaseaxis.x(),xbaseaxis.y(),xbaseaxis.z());
+                         printf("ybaseaxis: %f, %f, %f \n",ybaseaxis.x(),ybaseaxis.y(),ybaseaxis.z());
+                        printf("zbaseaxis: %f, %f, %f \n",baseaxis.x(),baseaxis.y(),baseaxis.z());
+
+
+                           frameInB.getBasis().setValue(btxjoint0new.x(),btyjoint0new.x(),btzjoint0new.x(), 
+                                                      btxjoint0new.y(), btyjoint0new.y(),btzjoint0new.y(), 
+                                                      btxjoint0new.z(), btyjoint0new.z() ,btzjoint0new.z() ); 
+                          
+                          frameInA.setOrigin(chainpos);
+                         frameInB.setOrigin(pivot2);
+                        /* frameInB.getBasis().setValue(btxjoint1new.x(),btyjoint1new.x(),btzjoint1new.x(), 
+                                                      btxjoint1new.y(), btyjoint1new.y(),btzjoint1new.y(), 
+                                                      btxjoint1new.z(), btyjoint1new.z() ,btzjoint1new.z() ); */
+
+                    
+                       
+                        /* frameInB.getBasis().setValue(btxjointbnew.x(),btyjointbnew.x(),btzjointbnew.x(), 
+                                                      btxjointbnew.y(), btyjointbnew.y(),btzjointbnew.y(), 
+                                                      btxjointbnew.z(), btyjointbnew.z() ,btzjointbnew.z() ); */
+
+                         
+                       
+                         // printf("chain %d wolrd x in new frame %f,%f,%f \n",f,xjointonew.x(),xjointonew.y(),xjointonew.z()); 
+                         // printf("chain %d wolrd y in new frame %f,%f,%f \n",f,yjointonew.x(),yjointonew.y(),yjointonew.z()); 
+                          //printf("chain %d wolrd z in new frame %f,%f,%f \n",f,zjointonew.x(),zjointonew.y(),zjointonew.z()); 
+
+                          printf("chain %d joint0 x in new frame %f,%f,%f \n",f,xjoint0new.x(),xjoint0new.y(),xjoint0new.z()); 
+                          printf("chain %d joint0 y in new frame %f,%f,%f \n",f,yjoint0new.x(),yjoint0new.y(),yjoint0new.z()); 
+                          printf("chain %d joint0 z in new frame %f,%f,%f \n",f,zjoint0new.x(),zjoint0new.y(),zjoint0new.z()); 
+              
+
+                          printf("chain %d joint1 x in new frame %f,%f,%f \n",f,xjoint1new.x(),xjoint1new.y(),xjoint1new.z()); 
+                          printf("chain %d joint1 y in new frame %f,%f,%f \n",f,yjoint1new.x(),yjoint1new.y(),yjoint1new.z()); 
+                          printf("chain %d joint1 z in new frame %f,%f,%f \n",f,zjoint1new.x(),zjoint1new.y(),zjoint1new.z()); 
+
+                         
+                          printf("chain %d joint1 z in joint0  frame %f,%f,%f \n",f,zjoint1infram0.x(),zjoint1infram0.y(),zjoint1infram0.z()); 
+        
+                         
+                         btGeneric6DofConstraint* newjoint=new btGeneric6DofConstraint(*(mBtLinks[0]) , *(mBtLinks[curind]), frameInA, frameInB,false);
+                     
+                         
+                         newjoint->setLimit(0,0,0);
+                         newjoint->setLimit(1,0,0); 
+                         newjoint->setLimit(2,0,0);  // set translation along x,y z,( 0,1,2 ) to be 0
+                         if(zjoint1infram0.x()!=0){
+                           printf("zjoint1 in joint0 frame is x, limit the y rotation \n ");
+                           newjoint->setLimit(4,0,0);  // limit the y rotation;
+                         }else if(zjoint1infram0.y()!=0){
+                            printf("zjoint1 in joint0 frame is y, limit the x rotation \n ");
+                            newjoint->setLimit(3,0,0);  // limit the x rotation;
+                          }
+                         
+                         mBtDynamicsWorld->addConstraint(newjoint , true); 
+                        
+                       
+                           }else{// 1 to 1 joint and link
+                             //barrett test
+                             btTypedConstraint* newjoint ;
+                             newjoint = new btHingeConstraint(*(mBtLinks[0]) , *(mBtLinks[curind]) , chainpos, pivot2,  baseaxis, linkpaxis);
+                            //for barrett                                    
+                             mBtDynamicsWorld->addConstraint(newjoint , true);
+                           }
+                    }else{ 
+                         position dislocation=robot->getChain(f)->getLink(l-1)->getDistalJointLocation();
+                         printf("DistalJointLocation localtion: %f, %f, %f  \n",dislocation.x(),dislocation.y(),dislocation.z());
+                         btVector3 linkpivot1(dislocation.x(),dislocation.y(),dislocation.z());
+                         btTypedConstraint* newjoint = new btHingeConstraint(*(mBtLinks[curind-1]) , *(mBtLinks[curind]) , btVector3(0 , 0 , 0), pivot2, btVector3(0 , 0 , 1), linkpaxis );
+                        //set the second parameter to be true, disable collision between two constraint body
+                          mBtDynamicsWorld->addConstraint(newjoint , true);
+
+                               }
+
 			}
+	             }
+	         }
+ 
 
-
-
-
-		}
-	}
 	for (int f=0; f<robot->getNumChains(); f++) {
 		mCollisionInterface->activatePair(robot->getChain(f)->getLink(0), robot->getBase(), false);   
 		for (int l=0; l<robot->getChain(f)->getNumLinks(); l++) {
@@ -2480,7 +2629,7 @@ World::stepDynamics()
 
 	// Step BULLET DYNAMICS
 	{
-		mBtDynamicsWorld->stepSimulation(1.f/60.f,10);
+		mBtDynamicsWorld->stepSimulation(1.f/60.f,10); 
 		
 		
 
