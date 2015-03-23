@@ -39,6 +39,7 @@
 #include "material.h"
 
 #include <Inventor/SoType.h>
+#include <map>
 
 class btDiscreteDynamicsWorld;
 //class btAlignedObjectArray;
@@ -198,7 +199,10 @@ protected:
   btDiscreteDynamicsWorld* mBtDynamicsWorld;
 
   btAlignedObjectArray<btRigidBody*> mBtLinks;
- 
+ //A map, key graspit body pointer, value btRigidBody*
+ std::map<Body*, btRigidBody*> btBodyMap;
+ typedef std::pair<Body*, btRigidBody*> btBodyPair;
+ std::map<Body*, btRigidBody*>::iterator btItr;
 
   friend class Body;
   friend class DynamicBody;
