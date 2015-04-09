@@ -34,16 +34,11 @@
 #include <set>
 #include <QString>
 #include <QObject>
-#include <btAlignedObjectArray.h>
 
 #include "material.h"
 
 #include <Inventor/SoType.h>
 #include <map>
-
-class btDiscreteDynamicsWorld;
-//class btAlignedObjectArray;
-class btRigidBody;
 
 class vec3;
 class position;
@@ -61,6 +56,7 @@ class Link;
 class GraspableBody;
 class WorldElement;
 class Tendon;
+class DynamicsEngine;
 
 typedef std::vector<position> Neighborhood;
 
@@ -163,6 +159,9 @@ protected:
   //! A pointer to the collision detection instance
   CollisionInterface *mCollisionInterface;
 
+  //! A pointer to the dynamics engine
+  DynamicsEngine *mDynamicsEngine;
+
   //! A pointer to the root of the world's Inventor scene graph
   SoSeparator *IVRoot;
 
@@ -196,14 +195,6 @@ protected:
   //! Static callback routine for the dynamic operations idle sensor.
   static void dynamicsCB(void *data,SoSensor *sensor);
   
-  btDiscreteDynamicsWorld* mBtDynamicsWorld;
-
-  btAlignedObjectArray<btRigidBody*> mBtLinks;
- //A map, key graspit body pointer, value btRigidBody*
- std::map<Body*, btRigidBody*> btBodyMap;
- typedef std::pair<Body*, btRigidBody*> btBodyPair;
- std::map<Body*, btRigidBody*>::iterator btItr;
-
   friend class Body;
   friend class DynamicBody;
   friend class MainWindow;
