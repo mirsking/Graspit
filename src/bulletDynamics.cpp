@@ -56,6 +56,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
+  mBtDynamicsWorld->setGravity(btVector3(5,5,5));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -164,7 +165,7 @@ void BulletDynamics::addRobot(Robot *robot)
     for (int l=0; l <numberLinks; l++) {
       
       //is this needed?
-      //addLink(robot->getChain(f)->getLink(l));
+      mWorld->addLink(robot->getChain(f)->getLink(l));
       
       btRigidBody* btcurrentlink = btBodyMap.find(robot->getChain(f)->getLink(l))->second;
       btRigidBody* btprevlink;

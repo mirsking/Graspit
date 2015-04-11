@@ -925,6 +925,7 @@ World::addLink(Link *newLink)
   bodyVec.push_back(newLink);
   numBodies++;
   //DYNENG: add to dynamics
+  mDynamicsEngine->addBody(newLink);  
 }
 
 /*! Loads a robot from a file and adds it to the world. \a filename must
@@ -1022,7 +1023,6 @@ World::addRobot(Robot *robot, bool addToScene) {
 
   modified = true;
   emit numElementsChanged();
-
   mDynamicsEngine->addRobot(robot);
 }
 
