@@ -56,7 +56,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(5,5,5));
+  mBtDynamicsWorld->setGravity(btVector3(0,-10,0));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -163,10 +163,7 @@ void BulletDynamics::addRobot(Robot *robot)
 
     int jointind = 0;  // keep track current joint index
     for (int l=0; l <numberLinks; l++) {
-      
-      //is this needed?
-      mWorld->addLink(robot->getChain(f)->getLink(l));
-      
+
       btRigidBody* btcurrentlink = btBodyMap.find(robot->getChain(f)->getLink(l))->second;
       btRigidBody* btprevlink;
       if (l > 0) {

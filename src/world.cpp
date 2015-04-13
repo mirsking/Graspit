@@ -995,6 +995,11 @@ World::addRobot(Robot *robot, bool addToScene) {
     addLink(robot->getBase());
   }
 
+  for (int f=0; f<robot->getNumChains(); f++) {
+    for (int l=0; l<robot->getChain(f)->getNumLinks(); l++) {
+      addLink(robot->getChain(f)->getLink(l));
+    }
+  }
   for (int f = 0; f <robot->getNumChains(); f++) {
     mCollisionInterface->activatePair(robot->getChain(f)->getLink(0), robot->getBase(), false);
     for (int l = 0; l <robot->getChain(f)->getNumLinks(); l++) {
