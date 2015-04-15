@@ -25,10 +25,48 @@
 
 #include "graspitDynamics.h"
 
-void GraspitDynamics::turnOnDynamics()
-{
+#include "body.h"
+#include "dynJoint.h"
+#include "robot.h"
+#include "triangle.h"
+#include "world.h"
+
+GraspitDynamics::GraspitDynamics(World *world) {
+  mWorld = world;
 }
 
-void GraspitDynamics::turnOffDynamics()
-{
+GraspitDynamics::~GraspitDynamics() {
+}
+
+void GraspitDynamics::addBody(Body *newBody) {
+}
+
+void GraspitDynamics::addRobot(Robot *robot) {
+}
+
+
+void GraspitDynamics::turnOnDynamics() {
+}
+
+void GraspitDynamics::turnOffDynamics() {
+}
+
+void GraspitDynamics::stepDynamics() {
+  mWorld->resetDynamicWrenches();
+  double actualTimeStep = mWorld->moveDynamicBodies(mWorld->getTimeStep());
+  if (actualTimeStep < 0) {
+    GraspitDynamics::turnOffDynamics();
+    mWorld->emitdynamicsError("Timestep failsafe reached.");
+    return;
+  }
+
+  for (int i = 0; i < mWorld->getNumRobots(); i++) {
+    mWorld->getRobot(i)->DOFController(actualTimeStep);
+    mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
+  }
+
+  if (mWorld->computeNewVelocities(actualTimeStep)) {
+    mWorld->emitdynamicsError("LCP could not be solved.");
+    return;
+  }
 }

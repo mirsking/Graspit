@@ -485,6 +485,9 @@ public:
 
   //! Emits the signal that informs that grasps have been updated
   void emitGraspsUpdated(){emit graspsUpdated();}
+
+  //! Emits a dynamics error has occured with an error string
+  void emitdynamicsError(const char *errMsg){emit dynamicsError(errMsg);}
 };
 
 #define WORLD_HXX

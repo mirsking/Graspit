@@ -73,7 +73,7 @@
 #include "Graspit/graspitCollision.h"
 #endif
 
-#define BULLET_DYNAMICS
+#define GRASPIT_DYNAMICS
 
 #ifdef GRASPIT_DYNAMICS
 #include "graspitDynamics.h"
@@ -155,7 +155,7 @@ World::World(QObject *parent, const char *name, IVmgr *mgr) : QObject(parent,nam
   WorldElementFactory::registerBuiltinCreators();
 
 #ifdef GRASPIT_DYNAMICS
-  mDynamicsEngine = new GraspitDynamics;
+  mDynamicsEngine = new GraspitDynamics(this);
 #endif
 #ifdef BULLET_DYNAMICS
   mDynamicsEngine = new BulletDynamics(this);
