@@ -36,17 +36,14 @@ class btRigidBody;
 class World;
 
 class BulletDynamics : public DynamicsEngine {
-
  public:
-  BulletDynamics(World *world);
+  explicit BulletDynamics(World *world);
   ~BulletDynamics();
   void addBody(Body *newBody);
   void addRobot(Robot *robot);
-
   void turnOnDynamics();
   void turnOffDynamics();
   int stepDynamics();
-  
   double moveDynamicBodies(double timeStep);
   int computeNewVelocities(double timeStep);
 

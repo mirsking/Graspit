@@ -69,19 +69,18 @@ to the bodies that are in contact to be used for subsequent computations.
 The same procedure is carried out if, by executing a full time step, a joint
 ends up outside of its legal range.
 */
-double GraspitDynamics::moveDynamicBodies(double timeStep)
-{
-  int i,numDynBodies,numCols,moveErrCode;
+double GraspitDynamics::moveDynamicBodies(double timeStep) {
+  int i, numDynBodies, numCols, moveErrCode;
   std::vector<DynamicBody *> dynBodies;
   static CollisionReport colReport;
   bool jointLimitHit;
-  double contactTime,delta,tmpDist,minDist,dofLimitDist;
-  
-  int numBodies=mWorld->getNumBodies();
-  int numRobots=mWorld->getNumRobots();
-  
-  //save the initial position
-  for (i=0;i<numBodies;i++) {
+  double contactTime, delta, tmpDist, minDist, dofLimitDist;
+
+  int numBodies = mWorld->getNumBodies();
+  int numRobots = mWorld->getNumRobots();
+ 
+  // save the initial position
+  for (i = 0; i < numBodies; i++) {
     if (mWorld->getBody(i)->isDynamic()) {
       dynBodies.push_back((DynamicBody *)mWorld->getBody(i));
       ((DynamicBody *)mWorld->getBody(i))->markState();
@@ -89,34 +88,34 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
   }
   numDynBodies = dynBodies.size();
 
-  //call to the dynamics engine to perform the move by the full time step
+  // call to the dynamics engine to perform the move by the full time step
   DBGP("moving bodies with timestep: " << timeStep);
-  moveErrCode = moveBodies(numDynBodies,dynBodies,timeStep);
-  if (moveErrCode == 1){ // object out of bounds
+  moveErrCode = moveBodies(numDynBodies, dynBodies, timeStep);
+  if (moveErrCode == 1) {  // object out of bounds
     mWorld->popDynamicState();
     turnOffDynamics();
-    return -1.0 ;
+    return -1.0;
   }
 
-  //this sets the joints internal values according to how bodies have moved
-  for (i=0;i<numRobots;i++) {
+  // this sets the joints internal values according to how bodies have moved
+  for (i = 0; i < numRobots; i++) {
     mWorld->getRobot(i)->updateJointValuesFromDynamics();
   }
 
-  //check if we have collisions
+  // check if we have collisions
   if (numDynBodies > 0) numCols = mWorld->getCollisionReport(&colReport);
   else numCols = 0;
 
-  //check if we have joint limits exceeded
+  // check if we have joint limits exceeded
   jointLimitHit = false;
-  for (i=0;i<numRobots;i++) {
+  for (i = 0; i < numRobots; i++) {
     if (mWorld->getRobot(i)->jointLimitDist() < 0.0) jointLimitHit = true;
   }
 
-  //if so, we must interpolate until the exact moment of contact or limit hit
+  // if so, we must interpolate until the exact moment of contact or limit hit
   if (numCols || jointLimitHit) {
-    //return to initial position
-    for (i=0;i<numDynBodies;i++) {
+    // return to initial position
+    for (i = 0; i < numDynBodies; i++) {
       dynBodies[i]->returnToMarkedState();
     }
     minDist = 1.0e+255;
@@ -125,58 +124,58 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
 #ifdef GRASPITDBG
     if (numCols) {
       std::cout << "COLLIDE!" << std::endl;
-      for (i=0;i<numCols;i++) {
-        std::cout << colReport[i].first->getName() << " collided with " << 
+      for (i = 0; i < numCols; i++) {
+        std::cout << colReport[i].first->getName() << " collided with " <<
           colReport[i].second->getName() << std::endl;
       }
 
-      for (i=0;i<numCols;i++) {
-        tmpDist = getDist(colReport[i].first,colReport[i].second);
-        if (tmpDist < minDist) minDist = tmpDist;  
+      for (i = 0; i < numCols; i++) {
+        tmpDist = getDist(colReport[i].first, colReport[i].second);
+        if (tmpDist < minDist) minDist = tmpDist;
         std::cout << "minDist: " << tmpDist <<" between " << std::endl;
         std::cout << colReport[i].first->getName() << " and " <<
           colReport[i].second->getName() << std::endl;
-      }      
+      }
     }
-#endif      
+#endif
 
-    //this section refines the timestep until the objects are separated
-    //by a distance less than CONTACT_THRESHOLD
+    // this section refines the timestep until the objects are separated
+    // by a distance less than CONTACT_THRESHOLD
     bool done = false;
     contactTime = timeStep;
     delta = contactTime/2;
     contactTime -= delta;
 
     while (!done) {
-      delta /= 2.0;    
-      for (i=0;i<numDynBodies;i++) {
+      delta /= 2.0;
+      for (i = 0; i < numDynBodies; i++) {
         dynBodies[i]->returnToMarkedState();
       }
       DBGP("moving bodies with timestep: " << contactTime);
-      moveErrCode = moveBodies(numDynBodies,dynBodies,contactTime);
+      moveErrCode = moveBodies(numDynBodies, dynBodies, contactTime);
 
-      if (moveErrCode == 1){ // object out of bounds
+      if (moveErrCode == 1) {  // object out of bounds
         mWorld->popDynamicState();
         turnOffDynamics();
         return -1.0;
       }
 
-      const char *min_body_1,*min_body_2;
+      const char *min_body_1, *min_body_2;
 
-      //this computes joints values according to how dynamic bodies have moved
-      for (i=0;i<numRobots;i++) {
+      // this computes joints values according to how dynamic bodies have moved
+      for (i = 0; i < numRobots; i++) {
         mWorld->getRobot(i)->updateJointValuesFromDynamics();
       }
 
       if (numCols) {
         minDist = 1.0e+255;
-        for (i=0;i<numCols;i++) {
-          tmpDist = mWorld->getDist(colReport[i].first,colReport[i].second);
+        for (i = 0; i < numCols; i++) {
+          tmpDist = mWorld->getDist(colReport[i].first, colReport[i].second);
           if (tmpDist < minDist) {
             minDist = tmpDist;
             min_body_1 = colReport[i].first->getName().latin1();
             min_body_2 = colReport[i].second->getName().latin1();
-            DBGP("minDist: " << minDist << " between " << colReport[i].first->getName() << 
+            DBGP("minDist: " << minDist << " between " << colReport[i].first->getName() <<
               " and " << colReport[i].second->getName());
           }
         }
@@ -184,22 +183,22 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
 
       if (jointLimitHit) {
         dofLimitDist = 1.0e10;
-        for (i=0; i<numRobots; i++) {
-          dofLimitDist = MIN( dofLimitDist, mWorld->getRobot(i)->jointLimitDist() );
+        for (i = 0; i < numRobots; i++) {
+          dofLimitDist = MIN(dofLimitDist, mWorld->getRobot(i)->jointLimitDist());
         }
       }
 
       if (minDist <= 0.0 || dofLimitDist < -resabs)
         contactTime -= delta;
-      else if (minDist > Contact::THRESHOLD * 0.5 && dofLimitDist > 0.01) //why is this not resabs
+      else if (minDist > Contact::THRESHOLD * 0.5 && dofLimitDist > 0.01)  // why is this not resabs
         contactTime += delta;
       else break;
 
       if (fabs(delta) < 1.0E-15 || contactTime < 1.0e-7) {
         if (minDist <= 0) {
-          fprintf(stderr,"Delta failsafe due to collision: %s and %s\n",min_body_1,min_body_2);
+          fprintf(stderr, "Delta failsafe due to collision: %s and %s\n", min_body_1, min_body_2);
         } else {
-          fprintf(stderr,"Delta failsafe due to joint\n");
+          fprintf(stderr, "Delta failsafe due to joint\n");
         }
         done = true;  // failsafe
       }
@@ -208,12 +207,11 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
     // COULD NOT FIND COLLISION TIME
     if (done && contactTime < 1.0E-7) {
       DBGP("!! could not find contact time !!");
-      for (i=0;i<numDynBodies;i++)
-        dynBodies[i]->returnToMarkedState();    
+      for (i = 0; i < numDynBodies; i++)
+        dynBodies[i]->returnToMarkedState();
     }
     mWorld->getWorldTimeRef() += contactTime;
-  }
-  else { // if no collision
+  } else {  // if no collision
     mWorld->getWorldTimeRef() += timeStep;
     contactTime = timeStep;
   }
@@ -222,12 +220,11 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
   std::cout << "CHECKING COLLISIONS AT MIDDLE OF STEP: ";
   numCols = getCollisionReport(colReport);
 
-  if (!numCols){ 
+  if (!numCols) {
     std::cout << "None." << std::endl;
-  }
-  else {
+  } else {
     std::cout << numCols <<" found!!!" << std::endl;
-    for (i=0;i<numCols;i++) {
+    for (i = 0; i < numCols; i++) {
       std::cout << colReport[i].first->getName() << " collided with " <<
         colReport[i].second->getName() << std::endl;
     }
@@ -237,13 +234,13 @@ double GraspitDynamics::moveDynamicBodies(double timeStep)
   if (numDynBodies > 0)
     mWorld->findAllContacts();
 
-  for (i=0; i<numRobots; i++){
+  for (i = 0; i < numRobots; i++) {
         if ( mWorld->getRobot(i)->inherits("HumanHand") ) ((HumanHand*)mWorld->getRobot(i))->updateTendonGeometry();
           mWorld->getRobot(i)->emitConfigChange();
   }
   mWorld->tendonChange();
 
-  if (contactTime<1.0E-7) return -1.0;
+  if (contactTime < 1.0E-7) return -1.0;
   return contactTime;
 }
 
@@ -258,17 +255,16 @@ a joint.  Then for each island, this calls the iterate dynamics routine
 to build and solve the LCP to find the velocities of all the bodies
 in the next iteration.
 */  
-int GraspitDynamics::computeNewVelocities(double timeStep)
-{
+int GraspitDynamics::computeNewVelocities(double timeStep) {
   bool allDynamicsComputed;
   static std::list<Contact *> contactList;
   std::list<Contact *>::iterator cp;
   std::vector<DynamicBody *> robotLinks;
   std::vector<DynamicBody *> dynIsland;
   std::vector<Robot *> islandRobots;
-  int i,j,numLinks,numDynBodies,numIslandRobots,lemkeErrCode;
+  int i, j, numLinks, numDynBodies, numIslandRobots, lemkeErrCode;
 
-  int numBodies=mWorld->getNumBodies();
+  int numBodies = mWorld->getNumBodies();
 
 #ifdef GRASPITDBG
   int islandCount = 0;
@@ -276,29 +272,28 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
 
   do {
     // seed the island with one dynamic body
-    for (i=0;i<numBodies;i++)
+    for (i = 0; i < numBodies; i++)
       if (mWorld->getBody(i)->isDynamic() &&
         !((DynamicBody *)mWorld->getBody(i))->dynamicsComputed()) {
-
           // if this body is a link, add all robots connected to the link
           if (mWorld->getBody(i)->inherits("Link")) {
             Robot *robot = ((Robot *)((Link *)mWorld->getBody(i))->getOwner())->getBaseRobot();
             robot->getAllLinks(dynIsland);
             robot->getAllAttachedRobots(islandRobots);
-          }
-          else
+          } else{
             dynIsland.push_back((DynamicBody *)mWorld->getBody(i));
+          }
           break;
       }
       numDynBodies = dynIsland.size();
-      for (i=0;i<numDynBodies;i++)
+      for (i = 0; i < numDynBodies; i++)
         dynIsland[i]->setDynamicsFlag();
 
       // add any bodies that contact any body already in the dynamic island
-      for (i=0;i<numDynBodies;i++) {
+      for (i = 0; i < numDynBodies; i++) {
         contactList = dynIsland[i]->getContacts();
-        for (cp=contactList.begin();cp!=contactList.end();cp++) {
-          //if the contacting body is dynamic and not already in the list, add it
+        for (cp = contactList.begin(); cp != contactList.end(); cp++) {
+          // if the contacting body is dynamic and not already in the list, add it
           if ((*cp)->getBody2()->isDynamic() &&
             !((DynamicBody *)(*cp)->getBody2())->dynamicsComputed()) {
               DynamicBody *contactedBody = (DynamicBody *)(*cp)->getBody2();
@@ -309,15 +304,14 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
                 robot->getAllLinks(robotLinks);
                 robot->getAllAttachedRobots(islandRobots);
                 numLinks = robotLinks.size();
-                for (j=0;j<numLinks;j++)
+                for (j = 0; j < numLinks; j++)
                   if (!robotLinks[j]->dynamicsComputed()) {
                     dynIsland.push_back(robotLinks[j]);
                     robotLinks[j]->setDynamicsFlag();
                     numDynBodies++;
                   }
                   robotLinks.clear();
-              }
-              else {
+              } else {
                 dynIsland.push_back(contactedBody);
                 contactedBody->setDynamicsFlag();
                 numDynBodies++;
@@ -329,17 +323,17 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
       numIslandRobots = islandRobots.size();
 
 #ifdef GRASPITDBG
-      std::cout << "Island "<< ++islandCount<<" Bodies: ";
-      for (i=0;i<numDynBodies;i++)
-        std::cout << dynIsland[i]->getName() <<" ";
+      std::cout << "Island " << ++islandCount << " Bodies: ";
+      for ( i = 0; i < numDynBodies; i++)
+        std::cout << dynIsland[i]->getName() << " ";
       std::cout << std::endl;
       std::cout << "Island Robots"<< islandCount<<" Robots: ";
-      for (i=0;i<numIslandRobots;i++)
+      for ( i = 0; i < numIslandRobots; i++)
         std::cout << islandRobots[i]->getName() <<" ";
       std::cout << std::endl << std::endl;
-#endif  
+#endif
 
-      for (i=0;i<numDynBodies;i++)
+      for (i = 0; i < numDynBodies; i++)
         dynIsland[i]->markState();
 
       DynamicParameters dp;
@@ -347,9 +341,9 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
         dp.timeStep = timeStep;
         dp.useContactEps = true;
         dp.gravityMultiplier = 1.0;
-        lemkeErrCode = iterateDynamics(islandRobots,dynIsland,&dp);
+        lemkeErrCode = iterateDynamics(islandRobots, dynIsland, &dp);
 
-        if (lemkeErrCode == 1){ // dynamics could not be solved
+        if (lemkeErrCode == 1){  // dynamics could not be solved
           std::cerr << "LCP COULD NOT BE SOLVED!"<<std::endl<<std::endl;
           turnOffDynamics();
           return -1;
@@ -359,7 +353,7 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
       dynIsland.clear(); 
       islandRobots.clear();
       allDynamicsComputed = true;
-      for (i=0;i<numBodies;i++)
+      for (i = 0; i < numBodies; i++)
         if (mWorld->getBody(i)->isDynamic() &&
           !((DynamicBody *)mWorld->getBody(i))->dynamicsComputed()) {
             allDynamicsComputed = false;
@@ -368,11 +362,10 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
   }  while (!allDynamicsComputed);
 
   // clear all the dynamicsComputed flags
-  for (i=0;i<numBodies;i++)
+  for (i = 0; i < numBodies; i++)
     if (mWorld->getBody(i)->isDynamic())
       ((DynamicBody *)mWorld->getBody(i))->resetDynamicsFlag();
 
-  
   mWorld->emitDynamicStepTaken();
   return 0;
 }

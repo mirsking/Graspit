@@ -34,7 +34,6 @@ class GraspitDynamics : public DynamicsEngine {
   ~GraspitDynamics();
   void addBody(Body *newBody);
   void addRobot(Robot *robot);
-  
   void turnOnDynamics();
   void turnOffDynamics();
   int stepDynamics();
