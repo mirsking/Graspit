@@ -37,7 +37,7 @@ class GraspitDynamics : public DynamicsEngine {
   
   void turnOnDynamics();
   void turnOffDynamics();
-  void stepDynamics();
+  int stepDynamics();
   double moveDynamicBodies(double timeStep);
   int computeNewVelocities(double timeStep);
  private:

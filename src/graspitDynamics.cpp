@@ -378,13 +378,13 @@ int GraspitDynamics::computeNewVelocities(double timeStep)
 }
 
 
-void GraspitDynamics::stepDynamics() {
+int GraspitDynamics::stepDynamics() {
   mWorld->resetDynamicWrenches();
   double actualTimeStep = moveDynamicBodies(mWorld->getTimeStep());
   if (actualTimeStep < 0) {
     GraspitDynamics::turnOffDynamics();
     mWorld->emitdynamicsError("Timestep failsafe reached.");
-    return;
+    return -1;
   }
 
   for (int i = 0; i < mWorld->getNumRobots(); i++) {
@@ -394,6 +394,6 @@ void GraspitDynamics::stepDynamics() {
 
   if (computeNewVelocities(actualTimeStep)) {
     mWorld->emitdynamicsError("LCP could not be solved.");
-    return;
+    return -1;
   }
 }

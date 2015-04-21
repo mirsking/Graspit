@@ -1874,7 +1874,11 @@ World::stepDynamics()
   //  emit dynamicsError("LCP could not be solved.");
   //  return;
   //}
-  mDynamicsEngine->stepDynamics();
+  int ret;
+  ret=mDynamicsEngine->stepDynamics();
+  if(ret==-1){
+    return;
+  }
   if (idleSensor) idleSensor->schedule();
 }
 

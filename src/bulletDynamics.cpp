@@ -337,7 +337,7 @@ void BulletDynamics::turnOffDynamics()
 {
 }
 
-void BulletDynamics::stepDynamics()
+int BulletDynamics::stepDynamics()
 {
   mBtDynamicsWorld->stepSimulation(1.f/60.f,10); 
   for (int j=mBtDynamicsWorld->getNumCollisionObjects()-1; j>=0 ;j--)
