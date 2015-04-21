@@ -40,6 +40,10 @@ public:
   virtual void turnOnDynamics() = 0;
   virtual void turnOffDynamics() = 0;
   virtual void stepDynamics() = 0;
+  
+  virtual double moveDynamicBodies(double timeStep) = 0;
+  virtual int computeNewVelocities(double timeStep) = 0;
+  
 };
 
 #endif

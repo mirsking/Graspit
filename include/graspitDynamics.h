@@ -34,10 +34,12 @@ class GraspitDynamics : public DynamicsEngine {
   ~GraspitDynamics();
   void addBody(Body *newBody);
   void addRobot(Robot *robot);
-
+  
   void turnOnDynamics();
   void turnOffDynamics();
   void stepDynamics();
+  double moveDynamicBodies(double timeStep);
+  int computeNewVelocities(double timeStep);
  private:
   World *mWorld;
 };

@@ -46,6 +46,9 @@ class BulletDynamics : public DynamicsEngine {
   void turnOnDynamics();
   void turnOffDynamics();
   void stepDynamics();
+  
+  double moveDynamicBodies(double timeStep);
+  int computeNewVelocities(double timeStep);
 
  private:
   World *mWorld;

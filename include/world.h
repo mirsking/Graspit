@@ -303,6 +303,9 @@ public:
   //! Returns the current simulation time for this world 
   double getWorldTime() const {return worldTime;}
 
+  //! Returns the current simulation time reference for this world 
+  double& getWorldTimeRef() {return worldTime;}
+
   //! Returns the default timestep for this world 
   double getTimeStep() const {return dynamicsTimeStep;}
   
@@ -486,8 +489,11 @@ public:
   //! Emits the signal that informs that grasps have been updated
   void emitGraspsUpdated(){emit graspsUpdated();}
 
-  //! Emits a dynamics error has occured with an error string
+  //! Emits the signal that dynamics error has occured with an error string
   void emitdynamicsError(const char *errMsg){emit dynamicsError(errMsg);}
+  
+  //! Emits the Signal that a dynamic step has been completed
+  void emitDynamicStepTaken(){emit dynamicStepTaken();}
 };
 
 #define WORLD_HXX
