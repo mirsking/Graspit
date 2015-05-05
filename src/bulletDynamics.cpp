@@ -59,7 +59,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(0,-10,0));
+  mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -337,6 +337,21 @@ void BulletDynamics::turnOffDynamics()
 {
 }
 
+
+void bulletApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap) {
+     vec3 worldAxis=activeJoint->getWorldAxis();
+     //printf(" axis: x: %lf, y: %lf, z: %lf  \n", worldAxis.x(),worldAxis.y(),worldAxis.z());
+     btRigidBody* btPrevLink = btBodyMap.find(activeJoint->dynJoint->getPrevLink())->second;
+     btRigidBody* btNextLink = btBodyMap.find(activeJoint->dynJoint->getNextLink())->second;
+     
+     //printf("magnitude : %lf \n", magnitude);
+        
+     btVector3 torquePrev(-magnitude*worldAxis.x(),-magnitude*worldAxis.y(), -magnitude*worldAxis.z()); 
+     btVector3 torqueNext(magnitude*worldAxis.x(),magnitude*worldAxis.y(), magnitude*worldAxis.z()); 
+     btPrevLink->applyTorque(torquePrev);
+     btNextLink->applyTorque(torqueNext);
+}
+
 int BulletDynamics::stepDynamics()
 {
   mBtDynamicsWorld->stepSimulation(1.f/60.f,10); 
@@ -361,7 +376,7 @@ int BulletDynamics::stepDynamics()
  
   
   }  
- // --------------------------------------------------------------------------------------------------------
+ // --------------------------add torque--------------------------------------------------
   double timeStep=1.0f/60.f;
   mWorld->resetDynamicWrenches();
  
@@ -374,45 +389,59 @@ int BulletDynamics::stepDynamics()
     int numDOF=robot->getNumDOF();
     //printf("numdof: %d \n", numDOF);
 
-    //mWorld->getWorldTime() >= dofUpdateTime
+    //if(mWorld->getWorldTime() >= dofUpdateTime)
     if (1) {
        DBGP("Updating setpoints");
        for (int d = 0; d < numDOF;d++) {
          DOF * dof = robot->getDOF(d);   
          dof->updateSetPoint();       
-         printf("dof val: %lf, set position: %lf, desired position: %lf \n", dof->getVal(),dof->getSetPoint(),dof->getDesiredPos());
+         printf("DOF: %d, dof val: %lf, set position: %lf, desired position: %lf \n",d, dof->getVal(),dof->getSetPoint(),dof->getDesiredPos());
        }
 	 dofUpdateTime += mWorld->getTimeStep();
        }
      for (int d=0;d<numDOF;d++) {
+       
          //DOF * dof=dofVec[d];
          DOF * dof=robot->getDOF(d);          
-	 //dofVec[d]->callController(timeStep);
-         //dof->callController(1.0f/60.f);
+
          dof->callController(timeStep);
-         //printf("DOFController3: getForce:%lf ,desired:%lf external forces:%lf \n",dof->getForce(),dof->getDesiredForce(),dof->getExtForce() );
-         printf("DOFController4: PDcontroller:%lf  \n",dof->PDPositionController(timeStep));
+
+        //get the joint of that dof    
+        Joint *activeJoint = *(dof->getJointList().begin());
+        double magnitude=robot->getDOF(d)->getForce();
+        magnitude=magnitude/1000;
+        printf("DOF: %d  magnitude : %lf \n", d, magnitude);
+        bulletApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);
+       
+      }
+
+
+     //mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
+     for (int c=0; c<robot->getNumChains(); c++) {
+	for (int j=0; j<robot->getChain(c)->getNumJoints(); j++) {
+	  //getChain(c)->getJoint(j)->applyPassiveInternalWrenches();
+          Joint *tempjoint=robot->getChain(c)->getJoint(j);
+          double f = tempjoint->getFriction();
+          //printf("chain: %d joint: %d Friction f: %lf \n",c,j,f);
+	  if (f != 0.0){
+            //applyInternalWrench(f);
+            bulletApplyInternalWrench(tempjoint, f, btBodyMap);
+          }
+
+	  f = tempjoint->getSpringForce();
+          //printf("chain: %d joint: %d SpringForce f: %lf \n",c,j,f);
+	  //applyInternalWrench(-f);
+          bulletApplyInternalWrench(tempjoint, f,btBodyMap);
 	}
+      }
 
-      mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
-
-     //bullet,simplestarm:
-     //printf("num of btBodyMap:i %d \n" ,btBodyMap.size());
-     btRigidBody* link1=btBodyMap.find(robot->getBase())->second;
-     btRigidBody* link2=btBodyMap.find(robot->getChain(0)->getLink(0))->second;
-     
-     //graspit: -4999999999.119493 , kp: 1000000000000.000000   kv: 10000000000.000000 , timestep:0.002500 
-     //          -100000
-     double magnitude=robot->getDOF(0)->getForce();
-     btVector3 torque1(0,0, -magnitude/1000); 
-     btVector3 torque2(0,0, magnitude/1000); 
-     link1->applyTorque(torque1);
-     link2->applyTorque(torque2);
-      
-  }
+   }
 
 
 }
+
+
+
 
 /*! One of the two main functions of the dynamics time step. This function is 
 called to move the bodies according to the velocities and accelerations found

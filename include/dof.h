@@ -262,6 +262,9 @@ public:
   void setDefaultVelocity(double v) {defaultVelocity = v;}
   void setTrajectory(double *traj,int numPts);
   void addToTrajectory(double *traj,int numPts);
+
+ /*! Get the jointlist of that DOF */
+ std::list<Joint *> getJointList() const {return jointList;}
 };
 
 /*! The RigidDOF is the simplest form of DOF. All of its joints are rigidly 
@@ -309,6 +312,7 @@ public:
                                                      double* Nu, double *eps, int &ncn);
 	//! Only sets force to first joint, coupling constraints should take care of rest
 	virtual void setForce(double f);
+
 };
 
 /*! The BreakAwayDOF is a model of the Barrett Hand finger DOFs. If a 
