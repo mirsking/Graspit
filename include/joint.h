@@ -300,6 +300,14 @@ public:
   double getFriction() const {
     return -f1 * velocity + (velocity<0 ? f0 : (velocity>0 ? -f0 : 0.0));
   }
+  /* get coefficient of viscous friction */
+   double getF1() const {
+    return f1;
+  }
+  /* get coefficient of Coulomb friction */
+   double getF0() const {
+    return f0;
+  }
 
   /*! Returns the spring force acting on this joint. This assumes a linear
     spring model, with constant stifness \a mK. Units are N*1.0e6 mm for torque

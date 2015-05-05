@@ -59,7 +59,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
+  mBtDynamicsWorld->setGravity(btVector3(0,0, -10));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -338,14 +338,58 @@ void BulletDynamics::turnOffDynamics()
 }
 
 
-void bulletApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap) {
+
+
+
+void btApplyFriction(Joint * joint, std::map<Body*, btRigidBody*> btBodyMap) {
+   double fx=0.0,fy=0.0,fz=0.0;
+   double vx=0.0,vy=0.0,vz=0.0;
+   double f1=0.0,f0=0.0;
+   btRigidBody* btPrevLink = btBodyMap.find(joint->dynJoint->getPrevLink())->second;
+   btRigidBody* btNextLink = btBodyMap.find(joint->dynJoint->getNextLink())->second;
+
+    btVector3 btVelocityPrev=btPrevLink->getAngularVelocity ();
+    printf(" btVelocityPrev, x: %lf, y: %lf, z: %lf \n", btVelocityPrev.x(), btVelocityPrev.y(),btVelocityPrev.z());  
+    btVector3 btVelocityNext=btNextLink->getAngularVelocity ();
+    printf(" btVelocityNext, x: %lf, y: %lf, z: %lf \n", btVelocityNext.x(), btVelocityNext.y(),btVelocityNext.z()); 
+   
+    vx=btVelocityNext.x()-btVelocityPrev.x();
+    vy=btVelocityNext.y()-btVelocityPrev.y();
+    vz=btVelocityNext.z()-btVelocityPrev.z();
+    printf(" vx: %lf, vy: %lf, vz: %lf \n", vx, vy,vz); 
+  
+    f1=joint->getF1();
+    f0=joint->getF0();
+  
+    fx=-f1 * vx + (vx<0 ? f0 : (vx>0 ? -f0 : 0.0));
+    fy=-f1 * vy + (vy<0 ? f0 : (vy>0 ? -f0 : 0.0));
+    fz=-f1 * vz + (vz<0 ? f0 : (vz>0 ? -f0 : 0.0));
+    printf(" fx: %lf, fy: %lf, fz: %lf \n", fx, fy, fz); 
+    
+    fx=fx/100;
+    fy=fy/100;
+    fz=fz/100;
+  
+    printf(" modified fx: %lf, fy: %lf, fz: %lf \n", fx, fy, fz);
+   
+    //applyInternalWrench(f);
+    vec3 worldAxis=joint->getWorldAxis();
+    btVector3 torquePrev(-fx*worldAxis.x(),-fy*worldAxis.y(), -fz*worldAxis.z()); 
+    btVector3 torqueNext(fx*worldAxis.x(),fy*worldAxis.y(), fz*worldAxis.z()); 
+    btPrevLink->applyTorque(torquePrev);
+    btNextLink->applyTorque(torqueNext);
+   
+}
+
+
+
+
+void btApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap) {
      vec3 worldAxis=activeJoint->getWorldAxis();
      //printf(" axis: x: %lf, y: %lf, z: %lf  \n", worldAxis.x(),worldAxis.y(),worldAxis.z());
      btRigidBody* btPrevLink = btBodyMap.find(activeJoint->dynJoint->getPrevLink())->second;
      btRigidBody* btNextLink = btBodyMap.find(activeJoint->dynJoint->getNextLink())->second;
-     
-     //printf("magnitude : %lf \n", magnitude);
-        
+ 
      btVector3 torquePrev(-magnitude*worldAxis.x(),-magnitude*worldAxis.y(), -magnitude*worldAxis.z()); 
      btVector3 torqueNext(magnitude*worldAxis.x(),magnitude*worldAxis.y(), magnitude*worldAxis.z()); 
      btPrevLink->applyTorque(torquePrev);
@@ -373,11 +417,27 @@ int BulletDynamics::stepDynamics()
     transf* temptrans2 = new transf(rotfix , translfix) ;
     transf temptrans2fix = *temptrans2;          
     tempbody->setTran(temptrans2fix);
+    
+    //TODO: feedback the bullet velocity to graspit velocity in order to calculate friction
+    btVector3 btAngularVelocity=body->getAngularVelocity ();
+    btVector3 btLinearVelocity=body->getLinearVelocity () ;
+    printf("obj: %d, btangVelocity, x: %lf, y: %lf, z: %lf \n",j, btAngularVelocity.x(), btAngularVelocity.y(),btAngularVelocity.z());
+    printf("obj: %d, btlinVelocity, x: %lf, y: %lf, z: %lf \n",j, btLinearVelocity.x(), btLinearVelocity.y(),btLinearVelocity.z());
+    
+     /*! Sets the current 6x1 velocity vector [vx vy vz vrx vry vrz] */
+    double newvelocity[6]={btLinearVelocity.x(), btLinearVelocity.y(),btLinearVelocity.z(),btAngularVelocity.x(), btAngularVelocity.y(),btAngularVelocity.z()};
+    if(tempbody->isDynamic()){
+      //printf("OBJ: %d is dynmaic body",j);
+      DynamicBody * tempdynbody=(DynamicBody *)tempbody;
+      tempdynbody->setVelocity(newvelocity);
+      
+    }
  
-  
+    
+ 
   }  
  // --------------------------add torque--------------------------------------------------
-  double timeStep=1.0f/60.f;
+  double timeStep=1.0f/60.f;   // ?
   mWorld->resetDynamicWrenches();
  
   double dofUpdateTime=0.0;
@@ -385,11 +445,9 @@ int BulletDynamics::stepDynamics()
     Robot* robot=mWorld->getRobot(i);     
     robot->updateJointValuesFromDynamics(); // !!!!!!
 
-    //printf("dofcontroller: getWorldTime() %lf , dofupdatetime: %lf \n", mWorld->getWorldTime(),dofUpdateTime); 
     int numDOF=robot->getNumDOF();
-    //printf("numdof: %d \n", numDOF);
 
-    //if(mWorld->getWorldTime() >= dofUpdateTime)
+    //if(mWorld->getWorldTime() >= dofUpdateTime) ?
     if (1) {
        DBGP("Updating setpoints");
        for (int d = 0; d < numDOF;d++) {
@@ -401,37 +459,51 @@ int BulletDynamics::stepDynamics()
        }
      for (int d=0;d<numDOF;d++) {
        
-         //DOF * dof=dofVec[d];
-         DOF * dof=robot->getDOF(d);          
-
+         DOF * dof=robot->getDOF(d); 
+         
          dof->callController(timeStep);
 
         //get the joint of that dof    
         Joint *activeJoint = *(dof->getJointList().begin());
         double magnitude=robot->getDOF(d)->getForce();
-        magnitude=magnitude/1000;
+        magnitude=magnitude/500;  //kp and kv seem to large for bullet dynamic
         printf("DOF: %d  magnitude : %lf \n", d, magnitude);
-        bulletApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);
+        printf("DOF: %d getForce:%lf ,desired:%lf external forces:%lf \n",d, dof->getForce(),dof->getDesiredForce(),dof->getExtForce() );
+        btApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);
        
       }
 
-
-     //mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
+   
+   robot->updateJointValuesFromDynamics(); // !!!!!!
+    //mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
      for (int c=0; c<robot->getNumChains(); c++) {
 	for (int j=0; j<robot->getChain(c)->getNumJoints(); j++) {
-	  //getChain(c)->getJoint(j)->applyPassiveInternalWrenches();
+
+	  //getChain(c)->getJoint(j)->applyPassiveInternalWrenches(); replace this with following
           Joint *tempjoint=robot->getChain(c)->getJoint(j);
-          double f = tempjoint->getFriction();
-          //printf("chain: %d joint: %d Friction f: %lf \n",c,j,f);
-	  if (f != 0.0){
+        
+          //btApplyFriction(tempjoint,btBodyMap);
+
+          printf("chain: %d joint: %d velocity : %lf \n",c,j,tempjoint->getVelocity());
+          double f = tempjoint->getFriction();  //get 0, since the graspit joint velocity is not set. 
+          printf("chain: %d joint: %d Friction: %lf \n",c,j,f);
+          f=f/15;
+          if (f != 0.0){
             //applyInternalWrench(f);
-            bulletApplyInternalWrench(tempjoint, f, btBodyMap);
+             btApplyInternalWrench(tempjoint,f,btBodyMap);
           }
 
+          //test:40000 
+          /*
+          if(j==robot->getChain(c)->getNumJoints()-1){
+                 f=40000;
+          }
+          */
+
 	  f = tempjoint->getSpringForce();
-          //printf("chain: %d joint: %d SpringForce f: %lf \n",c,j,f);
+          printf("chain: %d joint: %d SpringForce f: %lf \n",c,j,f);
 	  //applyInternalWrench(-f);
-          bulletApplyInternalWrench(tempjoint, f,btBodyMap);
+          btApplyInternalWrench(tempjoint, -f,btBodyMap);
 	}
       }
 
@@ -459,178 +531,8 @@ The same procedure is carried out if, by executing a full time step, a joint
 ends up outside of its legal range.
 */
 double BulletDynamics::moveDynamicBodies(double timeStep) {
-  int i, numDynBodies, numCols, moveErrCode;
-  std::vector<DynamicBody *> dynBodies;
-  static CollisionReport colReport;
-  bool jointLimitHit;
-  double contactTime, delta, tmpDist, minDist, dofLimitDist;
-
-  int numBodies = mWorld->getNumBodies();
-  int numRobots = mWorld->getNumRobots();
  
-  // save the initial position
-  for (i = 0; i < numBodies; i++) {
-    if (mWorld->getBody(i)->isDynamic()) {
-      dynBodies.push_back((DynamicBody *)mWorld->getBody(i));
-      ((DynamicBody *)mWorld->getBody(i))->markState();
-    }
-  }
-  numDynBodies = dynBodies.size();
-
-  // call to the dynamics engine to perform the move by the full time step
-  DBGP("moving bodies with timestep: " << timeStep);
-  moveErrCode = moveBodies(numDynBodies, dynBodies, timeStep);
-  if (moveErrCode == 1) {  // object out of bounds
-    mWorld->popDynamicState();
-    turnOffDynamics();
-    return -1.0;
-  }
-
-  // this sets the joints internal values according to how bodies have moved
-  for (i = 0; i < numRobots; i++) {
-    mWorld->getRobot(i)->updateJointValuesFromDynamics();
-  }
-
-  // check if we have collisions
-  if (numDynBodies > 0) numCols = mWorld->getCollisionReport(&colReport);
-  else numCols = 0;
-
-  // check if we have joint limits exceeded
-  jointLimitHit = false;
-  for (i = 0; i < numRobots; i++) {
-    if (mWorld->getRobot(i)->jointLimitDist() < 0.0) jointLimitHit = true;
-  }
-
-  // if so, we must interpolate until the exact moment of contact or limit hit
-  if (numCols || jointLimitHit) {
-    // return to initial position
-    for (i = 0; i < numDynBodies; i++) {
-      dynBodies[i]->returnToMarkedState();
-    }
-    minDist = 1.0e+255;
-    dofLimitDist = 1.0e+255;
-
-#ifdef GRASPITDBG
-    if (numCols) {
-      std::cout << "COLLIDE!" << std::endl;
-      for (i = 0; i < numCols; i++) {
-        std::cout << colReport[i].first->getName() << " collided with " <<
-          colReport[i].second->getName() << std::endl;
-      }
-
-      for (i = 0; i < numCols; i++) {
-        tmpDist = getDist(colReport[i].first, colReport[i].second);
-        if (tmpDist < minDist) minDist = tmpDist;
-        std::cout << "minDist: " << tmpDist <<" between " << std::endl;
-        std::cout << colReport[i].first->getName() << " and " <<
-          colReport[i].second->getName() << std::endl;
-      }
-    }
-#endif
-
-    // this section refines the timestep until the objects are separated
-    // by a distance less than CONTACT_THRESHOLD
-    bool done = false;
-    contactTime = timeStep;
-    delta = contactTime/2;
-    contactTime -= delta;
-
-    while (!done) {
-      delta /= 2.0;
-      for (i = 0; i < numDynBodies; i++) {
-        dynBodies[i]->returnToMarkedState();
-      }
-      DBGP("moving bodies with timestep: " << contactTime);
-      moveErrCode = moveBodies(numDynBodies, dynBodies, contactTime);
-
-      if (moveErrCode == 1) {  // object out of bounds
-        mWorld->popDynamicState();
-        turnOffDynamics();
-        return -1.0;
-      }
-
-      const char *min_body_1, *min_body_2;
-
-      // this computes joints values according to how dynamic bodies have moved
-      for (i = 0; i < numRobots; i++) {
-        mWorld->getRobot(i)->updateJointValuesFromDynamics();
-      }
-
-      if (numCols) {
-        minDist = 1.0e+255;
-        for (i = 0; i < numCols; i++) {
-          tmpDist = mWorld->getDist(colReport[i].first, colReport[i].second);
-          if (tmpDist < minDist) {
-            minDist = tmpDist;
-            min_body_1 = colReport[i].first->getName().latin1();
-            min_body_2 = colReport[i].second->getName().latin1();
-            DBGP("minDist: " << minDist << " between " << colReport[i].first->getName() <<
-              " and " << colReport[i].second->getName());
-          }
-        }
-      }
-
-      if (jointLimitHit) {
-        dofLimitDist = 1.0e10;
-        for (i = 0; i < numRobots; i++) {
-          dofLimitDist = MIN(dofLimitDist, mWorld->getRobot(i)->jointLimitDist());
-        }
-      }
-
-      if (minDist <= 0.0 || dofLimitDist < -resabs)
-        contactTime -= delta;
-      else if (minDist > Contact::THRESHOLD * 0.5 && dofLimitDist > 0.01)  // why is this not resabs
-        contactTime += delta;
-      else break;
-
-      if (fabs(delta) < 1.0E-15 || contactTime < 1.0e-7) {
-        if (minDist <= 0) {
-          fprintf(stderr, "Delta failsafe due to collision: %s and %s\n", min_body_1, min_body_2);
-        } else {
-          fprintf(stderr, "Delta failsafe due to joint\n");
-        }
-        done = true;  // failsafe
-      }
-    }
-
-    // COULD NOT FIND COLLISION TIME
-    if (done && contactTime < 1.0E-7) {
-      DBGP("!! could not find contact time !!");
-      for (i = 0; i < numDynBodies; i++)
-        dynBodies[i]->returnToMarkedState();
-    }
-    mWorld->getWorldTimeRef() += contactTime;
-  } else {  // if no collision
-    mWorld->getWorldTimeRef() += timeStep;
-    contactTime = timeStep;
-  }
-
-#ifdef GRASPITDBG
-  std::cout << "CHECKING COLLISIONS AT MIDDLE OF STEP: ";
-  numCols = getCollisionReport(colReport);
-
-  if (!numCols) {
-    std::cout << "None." << std::endl;
-  } else {
-    std::cout << numCols <<" found!!!" << std::endl;
-    for (i = 0; i < numCols; i++) {
-      std::cout << colReport[i].first->getName() << " collided with " <<
-        colReport[i].second->getName() << std::endl;
-    }
-  }
-#endif
-
-  if (numDynBodies > 0)
-    mWorld->findAllContacts();
-
-  for (i = 0; i < numRobots; i++) {
-        if ( mWorld->getRobot(i)->inherits("HumanHand") ) ((HumanHand*)mWorld->getRobot(i))->updateTendonGeometry();
-          mWorld->getRobot(i)->emitConfigChange();
-  }
-  mWorld->tendonChange();
-
-  if (contactTime < 1.0E-7) return -1.0;
-  return contactTime;
+  return 0;
 }
 
 
@@ -645,116 +547,6 @@ to build and solve the LCP to find the velocities of all the bodies
 in the next iteration.
 */  
 int BulletDynamics::computeNewVelocities(double timeStep) {
-  bool allDynamicsComputed;
-  static std::list<Contact *> contactList;
-  std::list<Contact *>::iterator cp;
-  std::vector<DynamicBody *> robotLinks;
-  std::vector<DynamicBody *> dynIsland;
-  std::vector<Robot *> islandRobots;
-  int i, j, numLinks, numDynBodies, numIslandRobots, lemkeErrCode;
-
-  int numBodies = mWorld->getNumBodies();
-
-#ifdef GRASPITDBG
-  int islandCount = 0;
-#endif
-
-  do {
-    // seed the island with one dynamic body
-    for (i = 0; i < numBodies; i++)
-      if (mWorld->getBody(i)->isDynamic() &&
-        !((DynamicBody *)mWorld->getBody(i))->dynamicsComputed()) {
-          // if this body is a link, add all robots connected to the link
-          if (mWorld->getBody(i)->inherits("Link")) {
-            Robot *robot = ((Robot *)((Link *)mWorld->getBody(i))->getOwner())->getBaseRobot();
-            robot->getAllLinks(dynIsland);
-            robot->getAllAttachedRobots(islandRobots);
-          } else{
-            dynIsland.push_back((DynamicBody *)mWorld->getBody(i));
-          }
-          break;
-      }
-      numDynBodies = dynIsland.size();
-      for (i = 0; i < numDynBodies; i++)
-        dynIsland[i]->setDynamicsFlag();
-
-      // add any bodies that contact any body already in the dynamic island
-      for (i = 0; i < numDynBodies; i++) {
-        contactList = dynIsland[i]->getContacts();
-        for (cp = contactList.begin(); cp != contactList.end(); cp++) {
-          // if the contacting body is dynamic and not already in the list, add it
-          if ((*cp)->getBody2()->isDynamic() &&
-            !((DynamicBody *)(*cp)->getBody2())->dynamicsComputed()) {
-              DynamicBody *contactedBody = (DynamicBody *)(*cp)->getBody2();
-
-              // is this body is a link, add all robots connected to the link
-              if (contactedBody->isA("Link")) {
-                Robot *robot = ((Robot *)((Link *)contactedBody)->getOwner())->getBaseRobot();
-                robot->getAllLinks(robotLinks);
-                robot->getAllAttachedRobots(islandRobots);
-                numLinks = robotLinks.size();
-                for (j = 0; j < numLinks; j++)
-                  if (!robotLinks[j]->dynamicsComputed()) {
-                    dynIsland.push_back(robotLinks[j]);
-                    robotLinks[j]->setDynamicsFlag();
-                    numDynBodies++;
-                  }
-                  robotLinks.clear();
-              } else {
-                dynIsland.push_back(contactedBody);
-                contactedBody->setDynamicsFlag();
-                numDynBodies++;
-              }
-          }
-        }
-      }
-
-      numIslandRobots = islandRobots.size();
-
-#ifdef GRASPITDBG
-      std::cout << "Island " << ++islandCount << " Bodies: ";
-      for ( i = 0; i < numDynBodies; i++)
-        std::cout << dynIsland[i]->getName() << " ";
-      std::cout << std::endl;
-      std::cout << "Island Robots"<< islandCount<<" Robots: ";
-      for ( i = 0; i < numIslandRobots; i++)
-        std::cout << islandRobots[i]->getName() <<" ";
-      std::cout << std::endl << std::endl;
-#endif
-
-      for (i = 0; i < numDynBodies; i++)
-        dynIsland[i]->markState();
-
-      DynamicParameters dp;
-      if (numDynBodies > 0) {
-        dp.timeStep = timeStep;
-        dp.useContactEps = true;
-        dp.gravityMultiplier = 1.0;
-        lemkeErrCode = iterateDynamics(islandRobots, dynIsland, &dp);
-
-        if (lemkeErrCode == 1){  // dynamics could not be solved
-          std::cerr << "LCP COULD NOT BE SOLVED!"<<std::endl<<std::endl;
-          turnOffDynamics();
-          return -1;
-        }
-      }
-
-      dynIsland.clear(); 
-      islandRobots.clear();
-      allDynamicsComputed = true;
-      for (i = 0; i < numBodies; i++)
-        if (mWorld->getBody(i)->isDynamic() &&
-          !((DynamicBody *)mWorld->getBody(i))->dynamicsComputed()) {
-            allDynamicsComputed = false;
-            break;
-        }
-  }  while (!allDynamicsComputed);
-
-  // clear all the dynamicsComputed flags
-  for (i = 0; i < numBodies; i++)
-    if (mWorld->getBody(i)->isDynamic())
-      ((DynamicBody *)mWorld->getBody(i))->resetDynamicsFlag();
-
-  mWorld->emitDynamicStepTaken();
+  
   return 0;
 }
