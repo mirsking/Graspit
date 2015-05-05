@@ -59,7 +59,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
+  mBtDynamicsWorld->setGravity(btVector3(0,-10,0));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -358,7 +358,59 @@ int BulletDynamics::stepDynamics()
     transf* temptrans2 = new transf(rotfix , translfix) ;
     transf temptrans2fix = *temptrans2;          
     tempbody->setTran(temptrans2fix);
+ 
+  
   }  
+ // --------------------------------------------------------------------------------------------------------
+  double timeStep=1.0f/60.f;
+  mWorld->resetDynamicWrenches();
+ 
+  double dofUpdateTime=0.0;
+  for (int i = 0; i < mWorld->getNumRobots(); i++) {
+    Robot* robot=mWorld->getRobot(i);     
+    robot->updateJointValuesFromDynamics(); // !!!!!!
+
+    //printf("dofcontroller: getWorldTime() %lf , dofupdatetime: %lf \n", mWorld->getWorldTime(),dofUpdateTime); 
+    int numDOF=robot->getNumDOF();
+    //printf("numdof: %d \n", numDOF);
+
+    //mWorld->getWorldTime() >= dofUpdateTime
+    if (1) {
+       DBGP("Updating setpoints");
+       for (int d = 0; d < numDOF;d++) {
+         DOF * dof = robot->getDOF(d);   
+         dof->updateSetPoint();       
+         printf("dof val: %lf, set position: %lf, desired position: %lf \n", dof->getVal(),dof->getSetPoint(),dof->getDesiredPos());
+       }
+	 dofUpdateTime += mWorld->getTimeStep();
+       }
+     for (int d=0;d<numDOF;d++) {
+         //DOF * dof=dofVec[d];
+         DOF * dof=robot->getDOF(d);          
+	 //dofVec[d]->callController(timeStep);
+         //dof->callController(1.0f/60.f);
+         dof->callController(timeStep);
+         //printf("DOFController3: getForce:%lf ,desired:%lf external forces:%lf \n",dof->getForce(),dof->getDesiredForce(),dof->getExtForce() );
+         printf("DOFController4: PDcontroller:%lf  \n",dof->PDPositionController(timeStep));
+	}
+
+      mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
+
+     //bullet,simplestarm:
+     //printf("num of btBodyMap:i %d \n" ,btBodyMap.size());
+     btRigidBody* link1=btBodyMap.find(robot->getBase())->second;
+     btRigidBody* link2=btBodyMap.find(robot->getChain(0)->getLink(0))->second;
+     
+     //graspit: -4999999999.119493 , kp: 1000000000000.000000   kv: 10000000000.000000 , timestep:0.002500 
+     //          -100000
+     double magnitude=robot->getDOF(0)->getForce();
+     btVector3 torque1(0,0, -magnitude/1000); 
+     btVector3 torque2(0,0, magnitude/1000); 
+     link1->applyTorque(torque1);
+     link2->applyTorque(torque2);
+      
+  }
+
 
 }
 
