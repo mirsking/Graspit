@@ -181,6 +181,7 @@ ClientSocket::readClient()
   std::vector<Robot *> robVec;
 
   bool ok;
+  World *world = graspItGUI->getIVmgr()->getWorld();
 
   while ( canReadLine() ) {
     line = readLine();
@@ -265,9 +266,11 @@ ClientSocket::readClient()
 	time = (*strPtr).toDouble(&ok); strPtr++;
       }
       if (!ok)
-	moveDynamicBodies(-1);
+	//moveDynamicBodies(-1);
+        world->stepDynamics();
       else
-	moveDynamicBodies(time);
+	//moveDynamicBodies(time);
+        world->stepDynamics();
     }
     
     else if (*strPtr == "computeNewVelocities") {
@@ -283,7 +286,8 @@ ClientSocket::readClient()
 #ifdef GRASPITDBG
       std::cout << time <<std::endl;
 #endif
-      computeNewVelocities(time);
+      //computeNewVelocities(time);
+      world->stepDynamics();
     }
     
   }
@@ -585,6 +589,7 @@ ClientSocket::moveBody(Body *bod)
   with that value.  Otherwise it uses the world default time step.  A line
   with the actual length of that timestep is then sent back.
 */
+/*
 void
 ClientSocket::moveDynamicBodies(double timeStep)
 {
@@ -599,12 +604,13 @@ ClientSocket::moveDynamicBodies(double timeStep)
   else 
     os << actualTimeStep << "\n";
 }
-
+*/
 /*!
   This calls the computeNewVelocities routine in the dynamics with the given
   value of the timestep.  Afterwards, it sends out a line containing the
   result code from that operation.
 */
+/*
 void
 ClientSocket::computeNewVelocities(double timeStep)
 {
@@ -612,6 +618,7 @@ ClientSocket::computeNewVelocities(double timeStep)
   int result = graspItGUI->getIVmgr()->getWorld()->computeNewVelocities(timeStep);
   os << result << "\n";
 }
+*/
 
 /*!
   This is not complete yet.
