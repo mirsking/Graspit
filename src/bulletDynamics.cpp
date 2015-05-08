@@ -59,7 +59,7 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(0,0, -10));
+  mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -338,62 +338,14 @@ void BulletDynamics::turnOffDynamics()
 }
 
 
-
-
-
-void btApplyFriction(Joint * joint, std::map<Body*, btRigidBody*> btBodyMap) {
-   double fx=0.0,fy=0.0,fz=0.0;
-   double vx=0.0,vy=0.0,vz=0.0;
-   double f1=0.0,f0=0.0;
-   btRigidBody* btPrevLink = btBodyMap.find(joint->dynJoint->getPrevLink())->second;
-   btRigidBody* btNextLink = btBodyMap.find(joint->dynJoint->getNextLink())->second;
-
-    btVector3 btVelocityPrev=btPrevLink->getAngularVelocity ();
-    printf(" btVelocityPrev, x: %lf, y: %lf, z: %lf \n", btVelocityPrev.x(), btVelocityPrev.y(),btVelocityPrev.z());  
-    btVector3 btVelocityNext=btNextLink->getAngularVelocity ();
-    printf(" btVelocityNext, x: %lf, y: %lf, z: %lf \n", btVelocityNext.x(), btVelocityNext.y(),btVelocityNext.z()); 
-   
-    vx=btVelocityNext.x()-btVelocityPrev.x();
-    vy=btVelocityNext.y()-btVelocityPrev.y();
-    vz=btVelocityNext.z()-btVelocityPrev.z();
-    printf(" vx: %lf, vy: %lf, vz: %lf \n", vx, vy,vz); 
-  
-    f1=joint->getF1();
-    f0=joint->getF0();
-  
-    fx=-f1 * vx + (vx<0 ? f0 : (vx>0 ? -f0 : 0.0));
-    fy=-f1 * vy + (vy<0 ? f0 : (vy>0 ? -f0 : 0.0));
-    fz=-f1 * vz + (vz<0 ? f0 : (vz>0 ? -f0 : 0.0));
-    printf(" fx: %lf, fy: %lf, fz: %lf \n", fx, fy, fz); 
-    
-    fx=fx/100;
-    fy=fy/100;
-    fz=fz/100;
-  
-    printf(" modified fx: %lf, fy: %lf, fz: %lf \n", fx, fy, fz);
-   
-    //applyInternalWrench(f);
-    vec3 worldAxis=joint->getWorldAxis();
-    btVector3 torquePrev(-fx*worldAxis.x(),-fy*worldAxis.y(), -fz*worldAxis.z()); 
-    btVector3 torqueNext(fx*worldAxis.x(),fy*worldAxis.y(), fz*worldAxis.z()); 
-    btPrevLink->applyTorque(torquePrev);
-    btNextLink->applyTorque(torqueNext);
-   
-}
-
-
-
-
-void btApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap) {
-     vec3 worldAxis=activeJoint->getWorldAxis();
-     //printf(" axis: x: %lf, y: %lf, z: %lf  \n", worldAxis.x(),worldAxis.y(),worldAxis.z());
-     btRigidBody* btPrevLink = btBodyMap.find(activeJoint->dynJoint->getPrevLink())->second;
-     btRigidBody* btNextLink = btBodyMap.find(activeJoint->dynJoint->getNextLink())->second;
- 
-     btVector3 torquePrev(-magnitude*worldAxis.x(),-magnitude*worldAxis.y(), -magnitude*worldAxis.z()); 
-     btVector3 torqueNext(magnitude*worldAxis.x(),magnitude*worldAxis.y(), magnitude*worldAxis.z()); 
-     btPrevLink->applyTorque(torquePrev);
-     btNextLink->applyTorque(torqueNext);
+void BulletDynamics::btApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap) {
+   vec3 worldAxis=activeJoint->getWorldAxis();
+   btRigidBody* btPrevLink = btBodyMap.find(activeJoint->dynJoint->getPrevLink())->second;
+   btRigidBody* btNextLink = btBodyMap.find(activeJoint->dynJoint->getNextLink())->second;
+   btVector3 torquePrev(-magnitude*worldAxis.x(),-magnitude*worldAxis.y(), -magnitude*worldAxis.z()); 
+   btVector3 torqueNext(magnitude*worldAxis.x(),magnitude*worldAxis.y(), magnitude*worldAxis.z()); 
+   btPrevLink->applyTorque(torquePrev);
+   btNextLink->applyTorque(torqueNext);
 }
 
 int BulletDynamics::stepDynamics()
@@ -418,98 +370,65 @@ int BulletDynamics::stepDynamics()
     transf temptrans2fix = *temptrans2;          
     tempbody->setTran(temptrans2fix);
     
-    //TODO: feedback the bullet velocity to graspit velocity in order to calculate friction
+    // avoid deactive 	
+    body->setSleepingThresholds(0,0);
+    //update the bullet velocity to graspit velocity in order to calculate friction
     btVector3 btAngularVelocity=body->getAngularVelocity ();
     btVector3 btLinearVelocity=body->getLinearVelocity () ;
-    printf("obj: %d, btangVelocity, x: %lf, y: %lf, z: %lf \n",j, btAngularVelocity.x(), btAngularVelocity.y(),btAngularVelocity.z());
-    printf("obj: %d, btlinVelocity, x: %lf, y: %lf, z: %lf \n",j, btLinearVelocity.x(), btLinearVelocity.y(),btLinearVelocity.z());
-    
+
      /*! Sets the current 6x1 velocity vector [vx vy vz vrx vry vrz] */
-    double newvelocity[6]={btLinearVelocity.x(), btLinearVelocity.y(),btLinearVelocity.z(),btAngularVelocity.x(), btAngularVelocity.y(),btAngularVelocity.z()};
+     double newvelocity[6]={btLinearVelocity.x(), btLinearVelocity.y(),btLinearVelocity.z(),btAngularVelocity.x(), btAngularVelocity.y(),btAngularVelocity.z()};
     if(tempbody->isDynamic()){
-      //printf("OBJ: %d is dynmaic body",j);
       DynamicBody * tempdynbody=(DynamicBody *)tempbody;
-      tempdynbody->setVelocity(newvelocity);
-      
+      tempdynbody->setVelocity(newvelocity); 
     }
- 
-    
- 
-  }  
+
+}
  // --------------------------add torque--------------------------------------------------
-  double timeStep=1.0f/60.f;   // ?
+  double timeStep=1.0f/60.f;   
   mWorld->resetDynamicWrenches();
- 
-  double dofUpdateTime=0.0;
+
   for (int i = 0; i < mWorld->getNumRobots(); i++) {
     Robot* robot=mWorld->getRobot(i);     
-    robot->updateJointValuesFromDynamics(); // !!!!!!
-
+    robot->updateJointValuesFromDynamics(); 
     int numDOF=robot->getNumDOF();
 
-    //if(mWorld->getWorldTime() >= dofUpdateTime) ?
     if (1) {
-       DBGP("Updating setpoints");
-       for (int d = 0; d < numDOF;d++) {
-         DOF * dof = robot->getDOF(d);   
-         dof->updateSetPoint();       
-         printf("DOF: %d, dof val: %lf, set position: %lf, desired position: %lf \n",d, dof->getVal(),dof->getSetPoint(),dof->getDesiredPos());
-       }
-	 dofUpdateTime += mWorld->getTimeStep();
-       }
-     for (int d=0;d<numDOF;d++) {
-       
-         DOF * dof=robot->getDOF(d); 
-         
-         dof->callController(timeStep);
-
-        //get the joint of that dof    
-        Joint *activeJoint = *(dof->getJointList().begin());
-        double magnitude=robot->getDOF(d)->getForce();
-        magnitude=magnitude/500;  //kp and kv seem to large for bullet dynamic
-        printf("DOF: %d  magnitude : %lf \n", d, magnitude);
-        printf("DOF: %d getForce:%lf ,desired:%lf external forces:%lf \n",d, dof->getForce(),dof->getDesiredForce(),dof->getExtForce() );
-        btApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);
-       
+      DBGP("Updating setpoints");
+      for (int d = 0; d < numDOF; d++) {
+        DOF * dof = robot->getDOF(d);   
+        dof->updateSetPoint();       
+        printf("DOF: %d, dof val: %lf, set point: %lf, desired pos: %lf \n",d, dof->getVal(),dof->getSetPoint(),dof->getDesiredPos());
       }
+    }
 
-   
-   robot->updateJointValuesFromDynamics(); // !!!!!!
-    //mWorld->getRobot(i)->applyJointPassiveInternalWrenches();
-     for (int c=0; c<robot->getNumChains(); c++) {
-	for (int j=0; j<robot->getChain(c)->getNumJoints(); j++) {
+    for (int d=0;d<numDOF;d++) {
+      DOF * dof=robot->getDOF(d);  
+      dof->callController(timeStep);
+      //get the joint of that dof    
+      Joint *activeJoint = *(dof->getJointList().begin());
+      double magnitude=robot->getDOF(d)->getForce();
+      magnitude=magnitude/1000;  //bullet: N.m graspit: N.mm
+      printf("DOF: %d getForce:%lf ,desired:%lf  \n",d, dof->getForce(),dof->getDesiredForce());
+      btApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);     
+    }
+ // --------------------------add friction--------------------------------------------------
+    for (int c = 0; c < robot->getNumChains(); c++) {
+      for (int j = 0; j < robot->getChain(c)->getNumJoints(); j++) {
+        Joint *tempjoint=robot->getChain(c)->getJoint(j);
 
-	  //getChain(c)->getJoint(j)->applyPassiveInternalWrenches(); replace this with following
-          Joint *tempjoint=robot->getChain(c)->getJoint(j);
-        
-          //btApplyFriction(tempjoint,btBodyMap);
-
-          printf("chain: %d joint: %d velocity : %lf \n",c,j,tempjoint->getVelocity());
-          double f = tempjoint->getFriction();  //get 0, since the graspit joint velocity is not set. 
-          printf("chain: %d joint: %d Friction: %lf \n",c,j,f);
-          f=f/15;
-          if (f != 0.0){
-            //applyInternalWrench(f);
-             btApplyInternalWrench(tempjoint,f,btBodyMap);
-          }
-
-          //test:40000 
-          /*
-          if(j==robot->getChain(c)->getNumJoints()-1){
-                 f=40000;
-          }
-          */
-
-	  f = tempjoint->getSpringForce();
-          printf("chain: %d joint: %d SpringForce f: %lf \n",c,j,f);
-	  //applyInternalWrench(-f);
-          btApplyInternalWrench(tempjoint, -f,btBodyMap);
-	}
+        double f = tempjoint->getFriction();  
+        printf("friction: %lf \n", f);
+        f=f/1000;
+        if (f != 0.0){
+          btApplyInternalWrench(tempjoint,f,btBodyMap);
+        }
+	  
+        f = tempjoint->getSpringForce();
+        btApplyInternalWrench(tempjoint, -f,btBodyMap);
       }
-
-   }
-
-
+    }
+  }
 }
 
 

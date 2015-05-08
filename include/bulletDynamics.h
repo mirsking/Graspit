@@ -29,6 +29,7 @@
 #include <btAlignedObjectArray.h>
 
 #include "dynamicsEngine.h"
+#include "joint.h"
 
 class btDiscreteDynamicsWorld;
 class btRigidBody;
@@ -46,12 +47,14 @@ class BulletDynamics : public DynamicsEngine {
   int stepDynamics();
   double moveDynamicBodies(double timeStep);
   int computeNewVelocities(double timeStep);
+  void btApplyInternalWrench (Joint * activeJoint, double magnitude, std::map<Body*, btRigidBody*> btBodyMap);
 
  private:
   World *mWorld;
 
   btDiscreteDynamicsWorld* mBtDynamicsWorld;
   btAlignedObjectArray<btRigidBody*> mBtLinks;
+  
 
   typedef std::pair<Body*, btRigidBody*> btBodyPair;
   std::map<Body*, btRigidBody*> btBodyMap;
