@@ -59,7 +59,8 @@ BulletDynamics::BulletDynamics(World *world)
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
   mBtDynamicsWorld = 
     new btDiscreteDynamicsWorld(dispatcher,overlappingPairCache,solver,collisionConfiguration);
-  mBtDynamicsWorld->setGravity(btVector3(0,0,-10));
+ 
+  mBtDynamicsWorld->setGravity(btVector3(0,-10,0));
 }
 
 BulletDynamics::~BulletDynamics()
@@ -104,10 +105,12 @@ void BulletDynamics::addBody(Body *newBody)
   
   if (newBody->isDynamic())
   {  
-    mass = ((DynamicBody*)newBody)->getMass();
+    mass = ((DynamicBody*)newBody)->getMass(); //mass g
+    mass=mass/1000; //kg
     triMeshShape = new btGImpactMeshShape(triMesh);
     ((btGImpactMeshShape*)triMeshShape)->updateBound();
     triMeshShape->calculateLocalInertia(mass,localInertia);  
+    printf("localInertia: %lf %lf %lf  kg.m^2\n", localInertia.x()/1e6,localInertia.y()/1e6,localInertia.z()/1e6);
   }
   else
   {
@@ -120,7 +123,9 @@ void BulletDynamics::addBody(Body *newBody)
     new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0 , 0)));
   btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,triMeshShape,localInertia);
   btRigidBody* body = new btRigidBody(rbInfo);
-  
+  // avoid deactive 	
+    body->setSleepingThresholds(0,0);
+
   //add the body to the dynamics world
   mBtDynamicsWorld->addRigidBody(body);
 
@@ -350,6 +355,7 @@ void BulletDynamics::btApplyInternalWrench (Joint * activeJoint, double magnitud
 
 int BulletDynamics::stepDynamics()
 {
+
   mBtDynamicsWorld->stepSimulation(1.f/60.f,10); 
   for (int j=mBtDynamicsWorld->getNumCollisionObjects()-1; j>=0 ;j--)
   {
@@ -370,8 +376,6 @@ int BulletDynamics::stepDynamics()
     transf temptrans2fix = *temptrans2;          
     tempbody->setTran(temptrans2fix);
     
-    // avoid deactive 	
-    body->setSleepingThresholds(0,0);
     //update the bullet velocity to graspit velocity in order to calculate friction
     btVector3 btAngularVelocity=body->getAngularVelocity ();
     btVector3 btLinearVelocity=body->getLinearVelocity () ;
@@ -382,7 +386,6 @@ int BulletDynamics::stepDynamics()
       DynamicBody * tempdynbody=(DynamicBody *)tempbody;
       tempdynbody->setVelocity(newvelocity); 
     }
-
 }
  // --------------------------add torque--------------------------------------------------
   double timeStep=1.0f/60.f;   
@@ -407,9 +410,13 @@ int BulletDynamics::stepDynamics()
       dof->callController(timeStep);
       //get the joint of that dof    
       Joint *activeJoint = *(dof->getJointList().begin());
-      double magnitude=robot->getDOF(d)->getForce();
-      magnitude=magnitude/1000;  //bullet: N.m graspit: N.mm
+      double magnitude=robot->getDOF(d)->getForce();  
       printf("DOF: %d getForce:%lf ,desired:%lf  \n",d, dof->getForce(),dof->getDesiredForce());
+
+      //1. change torque(?) to torque(N.mm)
+      magnitude=magnitude/1e6;
+      printf("DOF: %d apply torque: %lf N.mm  \n",d, magnitude);
+      
       btApplyInternalWrench( activeJoint,  magnitude,  btBodyMap);     
     }
  // --------------------------add friction--------------------------------------------------
@@ -418,19 +425,18 @@ int BulletDynamics::stepDynamics()
         Joint *tempjoint=robot->getChain(c)->getJoint(j);
 
         double f = tempjoint->getFriction();  
-        printf("friction: %lf \n", f);
-        f=f/1000;
+        //printf("friction: %lf \n", f);
+        //f=f/5;
         if (f != 0.0){
-          btApplyInternalWrench(tempjoint,f,btBodyMap);
+        //btApplyInternalWrench(tempjoint,f,btBodyMap);
         }
 	  
         f = tempjoint->getSpringForce();
-        btApplyInternalWrench(tempjoint, -f,btBodyMap);
+       // btApplyInternalWrench(tempjoint, -f,btBodyMap);
       }
     }
   }
 }
-
 
 
 
