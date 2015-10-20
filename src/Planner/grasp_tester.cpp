@@ -535,7 +535,8 @@ grasp_tester::iteration(plannedGrasp& pg)
       if (my_hand->getName().startsWith("Barrett")){
 	/* if joints have closed to max */
 	int allClosed = 0;
-	for (int i=1; i<4;i++){
+    int dof_num = my_hand->getNumDOF();
+    for (int i=1; i<dof_num;i++){
 	  if (my_hand->getDOF(i)->getVal() == my_hand->getDOF(i)->getMax()){
 	    allClosed++;
 	  }

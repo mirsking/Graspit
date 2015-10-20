@@ -1,0 +1,127 @@
+<?xml version="1.0" ?>
+<robot type="Barrett">
+    <palm>palm.xml</palm>
+    <dof type="b">
+        <defaultVelocity>1.0</defaultVelocity>
+        <maxEffort>2.5e+9</maxEffort>
+        <Kp>1.0e+11</Kp>
+        <Kd>1.0e+7</Kd>
+        <draggerScale>20</draggerScale>
+        <breakAwayTorque>0.5</breakAwayTorque>
+    </dof>
+    <dof type="b">
+        <defaultVelocity>1.0</defaultVelocity>
+        <maxEffort>2.5e+9</maxEffort>
+        <Kp>1.0e+11</Kp>
+        <Kd>1.0e+7</Kd>
+        <draggerScale>20</draggerScale>
+        <breakAwayTorque>0.5</breakAwayTorque>
+    </dof>
+    <dof type="b">
+        <defaultVelocity>1.0</defaultVelocity>
+        <maxEffort>5.0e+9</maxEffort>
+        <Kp>1.0e+11</Kp>
+        <Kd>1.0e+7</Kd>
+        <draggerScale>20</draggerScale>
+        <breakAwayTorque>0.5</breakAwayTorque>
+    </dof>
+    <chain>
+        <transform>
+            <translation>2.2831 -31.257 114.43</translation>
+			<rotation>-100.964303788 x </rotation>
+			<rotation>-88.5736794277 y </rotation>
+			<rotation>-134.790685855 z </rotation>
+        </transform>
+        <joint type="Revolute">
+			<theta>d0</theta>
+            <d>0</d>
+			<a>0</a>
+            <alpha>0</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+        <joint type="Revolute">
+            <theta>d0*0.05</theta>
+            <d>0</d>
+            <a>44.102</a>
+            <alpha>-10.8501016061</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+		<link dynamicJointType="Revolute">link1.xml</link>
+        <link dynamicJointType="Revolute">link2.xml</link>
+    </chain>
+    <chain>
+        <transform>
+			<translation>21.684 27.099 114.67</translation>
+			<rotation>88.5490567041 x </rotation>
+			<rotation>79.483713404 y </rotation>
+			<rotation>57.575064219 z </rotation>
+        </transform>
+        <joint type="Revolute">
+			<theta>d1</theta>
+            <d>0</d>
+            <a>0</a>
+            <alpha>0</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+        <joint type="Revolute">
+			<theta>d1*0.05</theta>
+            <d>0</d>
+            <a>44.102</a>
+			<alpha>-10.8501016061</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+	    <link dynamicJointType="Revolute">link1.xml</link>
+        <link dynamicJointType="Revolute">link2.xml</link>
+    </chain>
+    <chain>
+        <transform>
+			<translation>-22.827 27.047 114.46</translation>
+			<rotation>-88.5633865328 x </rotation>
+			<rotation>79.3499265118 y </rotation>
+			<rotation>-125.362509752 z </rotation>
+        </transform>
+        <joint type="Revolute">
+			<theta>d2</theta>
+            <d>0</d>
+			<a>0</a>
+            <alpha>0</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+        <joint type="Revolute">
+			<theta>d2*0.05</theta>
+            <d>0</d>
+            <a>44.102</a>
+            <alpha>-10.8501016061</alpha>
+            <minValue>0</minValue>
+            <maxValue>50</maxValue>
+            <viscousFriction>5.0e+7</viscousFriction>
+        </joint>
+	    <link dynamicJointType="Revolute">link1.xml</link>
+        <link dynamicJointType="Revolute">link2.xml</link>
+    </chain>
+    <approachDirection>
+        <referenceLocation>0 0 0</referenceLocation>
+        <direction>0 0 1</direction>
+    </approachDirection>
+	<!--
+    <eigenGrasps>eigen/barrett_eigen.xml</eigenGrasps>
+    <flockOfBirds number="1">
+        <transform>
+            <translation>0.0 -60 -35</translation>
+            <rotation>90 z</rotation>
+            <rotation>30 y</rotation>
+        </transform>
+    </flockOfBirds>
+    <virtualContacts>virtual/all_16_contacts.vgr</virtualContacts>
+	-->
+</robot>
