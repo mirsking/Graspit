@@ -169,6 +169,8 @@ public:
     bool set_iterationParameters(double,double);
     void get_iterationParameters(double&,double&)const;
 
+    std::list<plannedGrasp*> get_graspList()const{ return graspList;};
+
     grasp_planner* get_graspPlanner()const;
     grasp_tester*  get_graspTester()const;
 };
