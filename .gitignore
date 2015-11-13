@@ -1,0 +1,5 @@
+.moc/
+.obj/
+Makefile
+ui/ui_*
+ui/qmake_image_collection.cpp

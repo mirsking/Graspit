@@ -1,0 +1,45 @@
+#Inventor V2.1 ascii
+
+Separator { # Body
+	Material { # A bronze color:
+		ambientColor .33 .22 .27
+		diffuseColor .78 .57 .11
+		specularColor .99 .94 .81
+		shininess .28
+		transparency .6
+	}
+
+	Transform { translation 0 0 -15 }
+	Cube { width 70 height 90 depth 30 }
+
+	Separator {
+		Transform { translation 12.5 0 45 }
+		Cube { width 45 height 90 depth 60 }
+	}
+
+	Separator {
+		Transform { translation 0 0 100 }		
+		Cube { width 3 height 90 depth 50 }
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
