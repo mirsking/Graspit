@@ -4,7 +4,7 @@
 
 #----------------------general settings--------------------
 
-QT +=  qt3support 
+#QT +=  qt3support 
 
 CONFIG += qt warn_on exceptions assistant
 
