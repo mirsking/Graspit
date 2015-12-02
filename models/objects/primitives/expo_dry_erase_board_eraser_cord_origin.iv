@@ -10,7 +10,7 @@ Separator { # Body
 		transparency .6
     }
 
-	Cube { width 35 height 55 depth 130 }
+	Cube { width 35 height 130 depth 55 }
 }
 
 

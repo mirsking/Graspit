@@ -9,17 +9,17 @@ Separator { # Body
 		transparency .6
 	}
 
-	Transform { translation 0 0 -55 }
-	Cube { width 90 height 70 depth 30 }
+	Transform { translation 0 0 -15 }
+	Cube { width 70 height 90 depth 30 }
 
 	Separator {
-		Transform { translation 0 -12.5 45 }
-		Cube { width 90 height 45 depth 60 }
+		Transform { translation 12.5 0 45 }
+		Cube { width 45 height 90 depth 60 }
 	}
 
 	Separator {
 		Transform { translation 0 0 100 }		
-		Cube { width 90 height 3 depth 50 }
+		Cube { width 3 height 90 depth 50 }
 	}
 }
 
