@@ -27,6 +27,7 @@
   \brief Implements the %Barrett hand class, a specialized hand subclass
  */
 
+#include <cassert>
 #include <QTextStream>
 
 #include "barrett.h"
